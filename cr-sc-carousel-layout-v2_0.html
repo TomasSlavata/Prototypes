@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candy Rack — Offers carousel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CANDY RACK SLIDE CART TOKENS
+   Figma: yYQMX3Ton1MO8y7ZfAer9y — page "Carousel Layout 02"
+   screens 1.1 – 5.8. Corner radii from the 60% radius preset.
+   ============================================================ */
+:root{
+  --cr-bg-surface:      #ffffff;              /* color/bg/surface-default */
+  --cr-border:          rgba(40,42,44,0.13);  /* color/border/default */
+  --cr-border-input:    rgba(40,42,44,0.4);   /* color/input/border-default */
+  --cr-text:            #282a2c;              /* color/text/default */
+  --cr-text-secondary:  rgba(40,42,44,0.7);   /* color/text/secondary */
+  --cr-icon-default:    rgba(40,42,44,0.7);   /* color/icon/default */
+  --cr-icon-disabled:   rgba(40,42,44,0.2);   /* color/icon/disabled */
+  --cr-btn-bg:          #282a2c;              /* color/primary-button/bg-default */
+  --cr-btn-label:       #ffffff;              /* color/primary-button/label-default */
+
+  --cr-r-thumbnail:     8px;                  /* corner-radius/60%/thumbnail */
+  --cr-r-button:        12px;                 /* corner-radius/60%/button */
+  --cr-r-input:         12px;                 /* corner-radius/60%/text-input */
+  --cr-r-iconbutton:    12px;                 /* corner-radius/60%/smal-icon-button */
+  --cr-r-card:          16px;                 /* corner-radius/60%/card */
+
+  --cr-cart-h:  740px;
+  --cr-pad:     20px;
+
+  /* set by JS — cart width is now resizable (360–640), slide width and gap
+     are derived from it by geo() */
+  --cr-cart-w:  393px;
+  --cr-slide-w: 321px;
+  --cr-gap:     12px;
+}
+
+/* ============================================================
+   PAGE + CONTROLS (prototype chrome)
+   ============================================================ */
+*{box-sizing:border-box}
+html,body{margin:0; padding:0}
+body{
+  background:#ececed; min-height:100vh;
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+
+.bar{
+  position:sticky; top:0; z-index:20; padding:14px 20px;
+  background:rgba(255,255,255,0.82);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid rgba(40,42,44,0.08);
+}
+.bar__inner{
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+  gap:12px 28px; max-width:1040px; margin:0 auto;
+}
+.ctrl{display:flex; align-items:center; gap:10px}
+.ctrl.is-off{opacity:.4}
+.ctrl__label{
+  font-size:13px; line-height:16px; color:#3c3c43; opacity:.75;
+  white-space:nowrap; letter-spacing:-0.08px;
+}
+
+/* iOS segmented control — fixed segment width so switching Layout never
+   reflows the bar, and 31px tall to match the switches */
+.seg{
+  display:inline-flex; padding:2px; gap:2px; height:31px;
+  background:rgba(118,118,128,0.12); border-radius:9px;
+}
+.seg button{
+  appearance:none; border:0; background:transparent; cursor:pointer;
+  font:inherit; font-size:13px; font-weight:500; letter-spacing:-0.08px;
+  color:#000; padding:0; border-radius:7px;
+  width:80px; height:27px; display:grid; place-items:center;
+  transition:background .2s ease, box-shadow .2s ease;
+}
+.seg button[aria-pressed="true"]{
+  background:#fff; font-weight:600;
+  box-shadow:0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04);
+}
+
+/* iOS toggle */
+.switch{position:relative; width:51px; height:31px; flex:0 0 auto}
+.switch input{position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer}
+.switch i{
+  position:absolute; inset:0; border-radius:15.5px; pointer-events:none;
+  background:rgba(120,120,128,0.16); transition:background .25s ease;
+}
+.switch i::after{
+  content:''; position:absolute; top:2px; left:2px; width:27px; height:27px;
+  background:#fff; border-radius:50%; transition:transform .25s ease;
+  box-shadow:0 3px 8px rgba(0,0,0,.15), 0 3px 1px rgba(0,0,0,.06);
+}
+.switch input:checked + i{background:#1c1c1e}
+.switch input:checked + i::after{transform:translateX(20px)}
+.switch input:disabled{cursor:default}
+
+/* iOS slider — the second way to set the cart width, kept in sync with the
+   edge grips in the stage */
+.range{
+  appearance:none; -webkit-appearance:none; background:transparent;
+  width:180px; height:31px; margin:0; cursor:ew-resize;
+}
+.range::-webkit-slider-runnable-track{height:4px; border-radius:2px; background:rgba(120,120,128,0.2)}
+.range::-moz-range-track{height:4px; border-radius:2px; background:rgba(120,120,128,0.2)}
+.range::-webkit-slider-thumb{
+  appearance:none; -webkit-appearance:none; width:22px; height:22px; margin-top:-9px;
+  border-radius:50%; background:#fff; border:0;
+  box-shadow:0 3px 8px rgba(0,0,0,.15), 0 3px 1px rgba(0,0,0,.06);
+}
+.range::-moz-range-thumb{
+  width:22px; height:22px; border:0; border-radius:50%; background:#fff;
+  box-shadow:0 3px 8px rgba(0,0,0,.15), 0 3px 1px rgba(0,0,0,.06);
+}
+.readout{
+  font-size:13px; line-height:16px; letter-spacing:-0.08px; color:#3c3c43;
+  font-variant-numeric:tabular-nums; min-width:52px;
+}
+
+.stage{display:flex; align-items:flex-start; justify-content:center; padding:40px 40px 60px}
+/* the shadow has to be a filter, not box-shadow: clip-path would cut a
+   box-shadow off, while drop-shadow follows the clipped squircle outline */
+#frame{filter:drop-shadow(0 12px 40px rgba(40,42,44,0.14))}
+
+/* ---- resize rig (prototype chrome, not part of the design) -------------
+   Safari's Responsive Design Mode pattern: a thin pill on each edge. The
+   cart is centred, so an edge has to follow the pointer 1:1 — which means
+   the width changes by twice the pointer delta. */
+.rig{position:relative; display:flex; justify-content:center}
+.grip{
+  position:absolute; top:0; bottom:0; width:24px; display:grid; place-items:center;
+  cursor:ew-resize; touch-action:none; -webkit-user-select:none; user-select:none;
+}
+.grip--l{right:100%}
+.grip--r{left:100%}
+.grip::before{
+  content:''; width:4px; height:44px; border-radius:2px;
+  background:rgba(40,42,44,0.22); transition:background .15s ease;
+}
+.grip:hover::before{background:rgba(40,42,44,0.34)}
+.rig.is-resizing .grip::before{background:rgba(40,42,44,0.38)}
+/* at the ends of the range the grip that can no longer move goes quiet */
+.grip.is-limit::before{background:rgba(40,42,44,0.1)}
+
+.wbadge{
+  position:absolute; left:50%; top:100%; margin-top:14px; transform:translateX(-50%);
+  padding:3px 9px; border-radius:7px; background:#1c1c1e; color:#fff;
+  font-size:12px; line-height:16px; letter-spacing:-0.08px;
+  font-variant-numeric:tabular-nums; white-space:nowrap;
+  opacity:0; transition:opacity .15s ease; pointer-events:none;
+}
+.rig.is-resizing .wbadge{opacity:1}
+
+/* ============================================================
+   SLIDE CART — 393 × 740
+   ============================================================ */
+.cart{
+  width:var(--cr-cart-w); height:var(--cr-cart-h);
+  background:var(--cr-bg-surface); overflow:hidden;
+  display:flex; flex-direction:column; color:var(--cr-text);
+  /* 32px corners with 60% corner smoothing — see squirclePath() */
+  clip-path:var(--cr-squircle);
+}
+/* Figma text styles */
+.t-h-lg{font-size:20px; line-height:26px; font-weight:600}
+.t-h-md{font-size:16px; line-height:22px; font-weight:600}
+.t-h-sm{font-size:14px; line-height:20px; font-weight:600}
+.t-body{font-size:14px; line-height:20px; font-weight:400}
+.t-btn-md{font-size:14px; line-height:20px; font-weight:600}
+.t-btn-lg{font-size:16px; line-height:22px; font-weight:600}
+.t-strike{text-decoration:line-through; color:var(--cr-text-secondary)}
+
+/* Top Bar — 66px */
+.topbar{
+  display:flex; align-items:center; gap:16px; padding:var(--cr-pad);
+  border-bottom:1px solid var(--cr-border); flex:0 0 auto;
+}
+.topbar h2{margin:0; flex:1 0 0}
+.iconbtn{
+  appearance:none; border:0; background:none; padding:0; cursor:pointer;
+  width:20px; height:20px; display:grid; place-items:center; color:var(--cr-icon-default);
+}
+.iconbtn svg,.arrow svg,.stepper svg{display:block}
+
+/* Body — line items top, offers bottom */
+.body{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:space-between}
+
+.items{padding:var(--cr-pad)}
+.item{display:flex; align-items:flex-start}
+.item__thumb{
+  width:96px; height:96px; flex:0 0 auto; overflow:hidden;
+  border-radius:var(--cr-r-thumbnail); display:flex; align-items:center; justify-content:center;
+}
+.item__thumb img{width:100%; height:100%; object-fit:contain; display:block}
+.item__body{flex:1 0 0; min-width:0; padding-left:16px; display:flex; flex-direction:column}
+.item__row{display:flex; gap:20px; align-items:flex-start}
+.item__names{flex:1 0 0; min-width:0}
+/* the name wraps up to 3 lines and only then truncates — same rule as the
+   offer card. The variant stays on one line. */
+.item__name{
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.item__variant{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cr-text-secondary)}
+.item__qtyprice{display:flex; align-items:flex-end; justify-content:space-between; padding-top:16px}
+/* Figma: 116×40, padding 1, stroke 1 INSIDE — the stroke fills that 1px
+   band, so in CSS it is the border alone, with no padding on top of it.
+   38 + 2×1 = 40. */
+.stepper{
+  display:flex; align-items:center; background:var(--cr-bg-surface);
+  border:1px solid var(--cr-border-input); border-radius:var(--cr-r-input);
+}
+.stepper > *{width:38px; height:38px; display:grid; place-items:center}
+.stepper button{appearance:none; border:0; background:none; padding:0; cursor:pointer; color:var(--cr-icon-default)}
+.stepper button[disabled]{color:var(--cr-icon-disabled); cursor:default}
+.item__price{
+  display:flex; flex-direction:column; align-items:flex-end; justify-content:center;
+  min-height:40px; text-align:right; white-space:nowrap;
+}
+
+/* Cart Offers */
+.offers{border-top:1px solid var(--cr-border); padding:var(--cr-pad); display:flex; flex-direction:column}
+.offers__head{display:flex; align-items:center; gap:2px; padding-bottom:16px}
+.offers__head h3{margin:0; flex:1 0 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.arrows{display:flex; align-items:center; gap:6px; flex:0 0 auto}
+.arrow{
+  appearance:none; cursor:pointer; width:36px; height:36px; padding:8px;
+  display:grid; place-items:center; color:var(--cr-icon-default);
+  background:var(--cr-bg-surface); border:1px solid var(--cr-border);
+  border-radius:var(--cr-r-iconbutton);
+}
+.arrow[disabled]{color:var(--cr-icon-disabled); cursor:default}
+.arrow--next svg{transform:scaleX(-1)}
+
+/* Footer — 124px */
+.footer{border-top:1px solid var(--cr-border); padding:var(--cr-pad); display:flex; flex-direction:column; gap:16px; flex:0 0 auto}
+.subtotal{display:flex; justify-content:space-between; white-space:nowrap}
+.btn{
+  appearance:none; border:0; cursor:pointer; font-family:inherit;
+  background:var(--cr-btn-bg); color:var(--cr-btn-label); border-radius:var(--cr-r-button);
+}
+.btn--lg{width:100%; padding:12px 20px; text-align:center}
+.btn--md{padding:10px 20px; text-align:center}
+
+/* ============================================================
+   CAROUSEL
+   ============================================================ */
+.viewport{
+  overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;
+  scrollbar-width:none; cursor:grab;
+}
+.viewport::-webkit-scrollbar{display:none}
+.viewport.is-grabbing,
+.viewport.is-grabbing *{cursor:grabbing}
+.viewport.no-snap{scroll-snap-type:none}
+/* without these, dragging a photo or a link starts a native drag
+   instead of scrolling the carousel */
+.track{-webkit-user-select:none; user-select:none}
+.offer__thumb img{-webkit-user-drag:none}
+.track{display:flex; gap:var(--cr-gap); align-items:stretch}
+.slide{flex:0 0 auto; width:var(--cr-slide-w); scroll-snap-align:start; display:flex}
+/* trailing 20px so the last card stops on the grid line, not on the cart edge.
+   Has to be a real element — Chromium drops the scroller's padding-right and
+   the last child's margin-right from scrollWidth. */
+.tail{flex:0 0 auto; width:var(--cr-pad); margin-left:calc(-1 * var(--cr-gap))}
+
+/* peek variants bleed to the cart edges so the sliver reaches the right edge */
+.viewport.is-bleed{
+  margin-left:calc(-1 * var(--cr-pad)); margin-right:calc(-1 * var(--cr-pad));
+  padding-left:var(--cr-pad); scroll-padding-left:var(--cr-pad);
+}
+
+/* ============================================================
+   OFFER CARD
+   ============================================================ */
+.offer{flex:1 1 auto; min-width:0}
+/* thumbnail and name link to the product detail page; in the prototype the
+   click goes nowhere, only the cursor and the underline change */
+.pdp{cursor:pointer; color:inherit; text-decoration:none; -webkit-user-drag:none}
+/* The name has to stay a block so it can clamp and truncate, but the link
+   target must be the glyphs only — not the empty rest of the line. So the
+   block passes pointer events through and the inner span picks them up. */
+.pdp--text{pointer-events:none}
+.pdp--text > span{pointer-events:auto; cursor:pointer; -webkit-user-drag:none}
+.pdp--text > span:hover{text-decoration:underline}
+/* …but never while dragging the carousel */
+.viewport.is-grabbing .pdp--text > span{text-decoration:none !important}
+.offer__thumb{overflow:hidden; border-radius:var(--cr-r-thumbnail); background-size:cover; background-position:center; position:relative; display:block}
+.offer__thumb img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
+
+/* Style: Standard — thumbnail 96, no frame. Card height 96. */
+.offer{display:flex; align-items:flex-start}
+.offer__thumb{width:96px; height:96px; flex:0 0 auto}
+.offer__body{flex:1 0 0; min-width:0; padding-left:16px; display:flex; flex-direction:column; justify-content:center; min-height:96px}
+.offer__btn{display:flex; align-items:center; justify-content:center; padding-left:16px; min-height:96px; flex:0 0 auto}
+
+/* Style: Card — the Figma frame has 14px padding with the stroke drawn
+   INSIDE, so in CSS that is 1px border + 13px padding. Thumbnail drops to
+   80: 80 + 2×13 + 2×1 = 108, the card height in Figma. */
+.offer--card{border:1px solid var(--cr-border); border-radius:var(--cr-r-card); padding:13px}
+.offer--card .offer__thumb{width:80px; height:80px}
+.offer--card .offer__body,
+.offer--card .offer__btn{min-height:80px}
+
+/* product name wraps up to 3 lines, then truncates with an ellipsis */
+.offer__name{
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.offer__price{display:flex; flex-wrap:wrap; align-items:center; gap:0 6px; padding-top:2px; white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar__inner">
+    <div class="ctrl">
+      <span class="ctrl__label">Style</span>
+      <div class="seg" id="c-style"><button data-val="card">Card</button><button data-val="standard">Standard</button></div>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl__label">Peek</span>
+      <label class="switch"><input type="checkbox" id="c-peek" checked><i></i></label>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl__label">Arrows</span>
+      <label class="switch"><input type="checkbox" id="c-arrows" checked><i></i></label>
+    </div>
+
+    <div class="ctrl">
+      <span class="ctrl__label">Cart width</span>
+      <input class="range" type="range" id="c-width" min="360" max="640" step="1" value="393"
+             aria-label="Cart width in pixels">
+      <span class="readout" id="c-readout">393 px</span>
+    </div>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="rig" id="rig">
+    <div class="grip grip--l" data-side="-1" role="separator" aria-hidden="true"></div>
+    <div id="frame"></div>
+    <div class="grip grip--r" data-side="1" role="separator" aria-hidden="true"></div>
+    <div class="wbadge" id="wbadge">393 px</div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SQUIRCLE — Figma corner radius + corner smoothing
+   Rounded corners in CSS are circular arcs; Figma's smoothing
+   blends the arc into the straight edge with bezier shoulders.
+   Same construction Figma uses: a shortened arc plus two
+   symmetric cubics on either side of it.
+   ============================================================ */
+function squirclePath(w, h, radius, smoothing){
+  const rad = deg => deg * Math.PI / 180;
+  const budget = Math.min(w, h) / 2;
+  const r = Math.min(radius, budget);
+  const s = Math.min(smoothing, budget / r - 1);
+  const p = Math.min((1 + s) * r, budget);          // how far the corner reaches along each edge
+
+  const arcMeasure = 90 * (1 - s);                  // the arc keeps only part of the 90°
+  const arc   = Math.sin(rad(arcMeasure / 2)) * r * Math.SQRT2;
+  const alpha = (90 - arcMeasure) / 2;
+  const beta  = 45 * s;
+  const c = r * Math.tan(rad(alpha / 2)) * Math.cos(rad(beta));
+  const d = c * Math.tan(rad(beta));
+  const b = (p - arc - c - d) / 3;
+  const a = 2 * b;
+  const n = v => +v.toFixed(3);
+  const abc = a + b + c;
+
+  return `path("M ${n(w - p)} 0 \
+c ${n(a)} 0 ${n(a + b)} 0 ${n(abc)} ${n(d)} \
+a ${n(r)} ${n(r)} 0 0 1 ${n(arc)} ${n(arc)} \
+c ${n(d)} ${n(c)} ${n(d)} ${n(b + c)} ${n(d)} ${n(abc)} \
+L ${n(w)} ${n(h - p)} \
+c 0 ${n(a)} 0 ${n(a + b)} ${n(-d)} ${n(abc)} \
+a ${n(r)} ${n(r)} 0 0 1 ${n(-arc)} ${n(arc)} \
+c ${n(-c)} ${n(d)} ${n(-(b + c))} ${n(d)} ${n(-abc)} ${n(d)} \
+L ${n(p)} ${n(h)} \
+c ${n(-a)} 0 ${n(-(a + b))} 0 ${n(-abc)} ${n(-d)} \
+a ${n(r)} ${n(r)} 0 0 1 ${n(-arc)} ${n(-arc)} \
+c ${n(-d)} ${n(-c)} ${n(-d)} ${n(-(b + c))} ${n(-d)} ${n(-abc)} \
+L 0 ${n(p)} \
+c 0 ${n(-a)} 0 ${n(-(a + b))} ${n(d)} ${n(-abc)} \
+a ${n(r)} ${n(r)} 0 0 1 ${n(arc)} ${n(-arc)} \
+c ${n(c)} ${n(-d)} ${n(b + c)} ${n(-d)} ${n(abc)} ${n(-d)} Z")`;
+}
+
+/* clip-path is an absolute path, not a relative shape — every width change
+   needs a fresh one or the corners drift off the frame */
+const setSquircle = w =>
+  document.documentElement.style.setProperty('--cr-squircle', squirclePath(w, 740, 32, 0.6));
+
+/* ============================================================
+   ICONS — exported from the Figma slide cart components
+   ============================================================ */
+const SVG = (p, extra = '') =>
+  `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" ${extra}>${p}</svg>`;
+
+const ICON = {
+  cancel: SVG(`<path d="M3.21967 3.21967C3.51256 2.92678 3.98744 2.92678 4.28033 3.21967L10.0008 8.94016L15.7213 3.21967C16.0142 2.92678 16.4891 2.92678 16.782 3.21967C17.0749 3.51256 17.0749 3.98744 16.782 4.28033L11.0615 10.0008L16.782 15.7213C17.0749 16.0142 17.0749 16.4891 16.782 16.782C16.4891 17.0749 16.0142 17.0749 15.7213 16.782L10.0008 11.0615L4.28033 16.782C3.98744 17.0749 3.51256 17.0749 3.21967 16.782C2.92678 16.4891 2.92678 16.0142 3.21967 15.7213L8.94016 10.0008L3.21967 4.28033C2.92678 3.98744 2.92678 3.51256 3.21967 3.21967Z" fill="currentColor"/>`),
+  del: SVG(`<path fill-rule="evenodd" clip-rule="evenodd" d="M7.24994 5.25C7.24994 3.73122 8.48116 2.5 9.99994 2.5C11.5187 2.5 12.7499 3.73122 12.7499 5.25H15.75C16.1642 5.25 16.5 5.58579 16.5 6C16.5 6.41421 16.1642 6.75 15.75 6.75H14.9999L14.9998 12.2001C14.9998 13.8802 14.9997 14.7203 14.6728 15.362C14.3851 15.9265 13.9262 16.3854 13.3617 16.673C12.72 17 11.8799 17 10.1997 17H9.79999C8.11978 17 7.27968 17 6.63793 16.673C6.07343 16.3854 5.61448 15.9264 5.32687 15.3619C4.99989 14.7202 4.9999 13.8801 4.99994 12.1999L5.00005 6.75H4.25C3.83579 6.75 3.5 6.41421 3.5 6C3.5 5.58579 3.83579 5.25 4.25 5.25H7.24994ZM8.74994 5.25C8.74994 4.55964 9.30958 4 9.99994 4C10.6903 4 11.2499 4.55964 11.2499 5.25H8.74994ZM6.50007 6.75H13.4999L13.4998 12.2001C13.4998 13.0649 13.4986 13.6233 13.4639 14.0483C13.4305 14.4558 13.374 14.6068 13.3362 14.681C13.1924 14.9632 12.963 15.1927 12.6807 15.3365C12.6065 15.3743 12.4555 15.4308 12.048 15.4641C11.623 15.4988 11.0646 15.5 10.1997 15.5H9.79999C8.93513 15.5 8.37671 15.4988 7.95169 15.4641C7.54418 15.4308 7.3931 15.3743 7.31893 15.3365C7.03668 15.1927 6.80721 14.9632 6.6634 14.681C6.62561 14.6068 6.56909 14.4557 6.53581 14.0482C6.50109 13.6232 6.49994 13.0648 6.49995 12.1999L6.50007 6.75Z" fill="currentColor"/>`),
+  plus: SVG(`<path d="M10 5C9.58579 5 9.25 5.33579 9.25 5.75V9.25H5.75C5.33579 9.25 5 9.58579 5 10C5 10.4142 5.33579 10.75 5.75 10.75H9.25V14.25C9.25 14.6642 9.58579 15 10 15C10.4142 15 10.75 14.6642 10.75 14.25V10.75H14.25C14.6642 10.75 15 10.4142 15 10C15 9.58579 14.6642 9.25 14.25 9.25H10.75V5.75C10.75 5.33579 10.4142 5 10 5Z" fill="currentColor"/>`),
+  minus: SVG(`<rect x="5" y="9.25" width="10" height="1.5" rx="0.75" fill="currentColor"/>`),
+  chevron: SVG(`<path d="M10.6196 14.7789C10.9125 15.0718 11.3873 15.0718 11.6802 14.7789C11.9731 14.486 11.9731 14.0111 11.6802 13.7182L7.96129 9.99927L11.6802 6.28033C11.9731 5.98744 11.9731 5.51256 11.6802 5.21967C11.3873 4.92678 10.9125 4.92678 10.6196 5.21967L6.39221 9.44703C6.38465 9.454 6.3772 9.46116 6.36986 9.4685C6.22273 9.61563 6.14951 9.80868 6.15019 10.0015C6.15065 10.1929 6.22387 10.3841 6.36986 10.53C6.37718 10.5374 6.38461 10.5445 6.39216 10.5515L10.6196 14.7789Z" fill="currentColor"/>`)
+};
+
+/* ============================================================
+   PRODUCTS
+   Photos come from ./imgs/carousel-layout/. If the folder isn't
+   next to this file the thumbnails fall back to a drawing, so the
+   prototype still renders when opened on its own.
+   ============================================================ */
+const IMG_DIR = 'imgs/carousel-layout/';
+const SHOE_FALLBACK = 'data:image/png;base64,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';
+
+const draw = inner => 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  `<svg viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg"><rect width="144" height="144" fill="#f1f1f1"/>${inner}</svg>`);
+
+const ART = {
+  socks: draw(`<g stroke="#282a2c" stroke-width="2"><path d="M46 24h22v54c0 12-6 18-16 22l-8 3c-8 3-15-1-17-8s1-13 8-16l6-3c3-2 5-4 5-8z" fill="#fff"/><path d="M78 24h22v54c0 12-6 18-16 22l-8 3c-8 3-15-1-17-8s1-13 8-16l6-3c3-2 5-4 5-8z" fill="#fff"/></g><g clip-path="url(#k)"><rect x="46" y="30" width="54" height="7" fill="#e8452c"/><rect x="46" y="37" width="54" height="7" fill="#f2a53a"/><rect x="46" y="44" width="54" height="7" fill="#f5d94a"/><rect x="46" y="51" width="54" height="7" fill="#4fae5a"/><rect x="46" y="58" width="54" height="7" fill="#3d7fd1"/><rect x="46" y="65" width="54" height="7" fill="#8a4fbe"/></g><clipPath id="k"><path d="M46 24h22v54h-22zM78 24h22v54h-22z"/></clipPath>`),
+  shorts: draw(`<path d="M40 34h64l8 62H80l-8-30-8 30H32z" fill="#282a2c"/><path d="M40 34h64v8H40z" fill="#4a4d50"/><path d="M72 66v30" stroke="#f1f1f1" stroke-width="2"/><path d="M96 78c4 0 7 3 7 7" stroke="#fff" stroke-width="2" fill="none"/>`),
+  backpack: draw(`<rect x="38" y="38" width="68" height="80" rx="16" fill="#3a3d40"/><path d="M56 40c0-10 7-16 16-16s16 6 16 16" stroke="#3a3d40" stroke-width="5" fill="none"/><rect x="50" y="80" width="44" height="26" rx="6" fill="#4d5155"/><rect x="66" y="88" width="12" height="4" rx="2" fill="#f1f1f1"/>`),
+  sock: draw(`<g stroke="#282a2c" stroke-width="2"><path d="M46 30h22v44c0 10-5 15-13 18l-7 3c-7 3-13-1-15-7s1-11 7-14l5-2c3-2 4-4 4-7z" fill="#fff"/><path d="M78 30h22v44c0 10-5 15-13 18l-7 3c-7 3-13-1-15-7s1-11 7-14l5-2c3-2 4-4 4-7z" fill="#fff"/></g><g fill="#3d7fd1"><rect x="46" y="38" width="22" height="4"/><rect x="46" y="46" width="22" height="4"/><rect x="78" y="38" width="22" height="4"/><rect x="78" y="46" width="22" height="4"/></g>`)
+};
+
+const PRODUCTS = [
+  { name:'Happy Stripe Socks', regular:'$19.99', price:'$9.99',  file:'socks.png',        art:ART.socks },
+  { name:"Nike Men's Dri-FIT", regular:'$79.99', price:'$69.99', file:'dri-fit.png',      art:ART.shorts },
+  { name:'Nike Backpack',      regular:null,     price:'$49.99', file:'backpack.png',     art:ART.backpack },
+  { name:'Nike Sneaker Sock',  regular:null,     price:'$9.99',  file:'sneaker-sock.png', art:ART.sock }
+];
+
+/* ============================================================
+   GEOMETRY — every number taken from the Figma screens
+   ============================================================ */
+const PAD  = 20;                     // cart padding, both sides
+const WMIN = 360, WMAX = 640;        // resize range
+
+/* Gap is fixed per style. Peek is a step function of the cart width with
+   breakpoints at 380, 480 and 580 — read off frames 4.1–4.8 (Card) and
+   5.1–5.8 (Standard); both styles now share the same peek. The card fills
+   what is left:
+        card = cartW − PAD − gap − peek
+   which reproduces all 16 responsive frames to the pixel. */
+const GAP  = { card:12, standard:20 };
+const PEEK = [[380, 28], [480, 40], [580, 120], [Infinity, 200]];
+const peekFor = w => PEEK.find(([limit]) => w < limit)[1];
+
+const state = { style:'card', peek:true, arrows:true, width:393 };
+
+function geo(){
+  const gap = GAP[state.style];
+  /* without peek the card fills the content width — frames 3.2 / 3.4 */
+  if (!state.peek) return { w: state.width - 2 * PAD, gap, peek: 0 };
+  const peek = peekFor(state.width);
+  return { w: state.width - PAD - gap - peek, gap, peek };
+}
+
+/* ============================================================
+   MARKUP
+   ============================================================ */
+function offerCard(p){
+  return `<div class="offer${state.style === 'card' ? ' offer--card' : ''}">
+    <a class="offer__thumb pdp" href="#" draggable="false" aria-label="${p.name}"
+       style="background-image:url('${p.art}')">
+      <img src="${IMG_DIR}${p.file}" alt="" draggable="false" onerror="this.remove()">
+    </a>
+    <div class="offer__body">
+      <a class="offer__name pdp pdp--text t-h-sm" href="#" draggable="false"><span>${p.name}</span></a>
+      <div class="offer__price t-body">
+        ${p.regular ? `<span class="t-strike">${p.regular}</span>` : ''}<span>${p.price}</span>
+      </div>
+    </div>
+    <div class="offer__btn"><button class="btn btn--md t-btn-md" type="button">Add</button></div>
+  </div>`;
+}
+
+function cartHtml(){
+  const { peek: isPeek, arrows } = state;
+  const slides = PRODUCTS.map(p => `<div class="slide">${offerCard(p)}</div>`).join('');
+
+  return `<div class="cart">
+    <div class="topbar">
+      <h2 class="t-h-lg">Cart (1)</h2>
+      <button class="iconbtn" type="button" aria-label="Close cart">${ICON.cancel}</button>
+    </div>
+
+    <div class="body">
+      <div class="items">
+        <div class="item">
+          <a class="item__thumb pdp" href="#" draggable="false" aria-label="Nike Zoom Fly 5 Premium">
+            <img src="${IMG_DIR}line-item-1.png" alt="" draggable="false"
+              onerror="this.onerror=null; this.src=SHOE_FALLBACK">
+          </a>
+          <div class="item__body">
+            <div class="item__row">
+              <div class="item__names">
+                <a class="item__name pdp pdp--text t-h-sm" href="#" draggable="false"><span>Nike Zoom Fly 5 Premium</span></a>
+                <div class="item__variant t-body">44 / White</div>
+              </div>
+              <button class="iconbtn" type="button" aria-label="Remove item">${ICON.del}</button>
+            </div>
+            <div class="item__qtyprice">
+              <div class="stepper">
+                <button type="button" disabled aria-label="Decrease quantity">${ICON.minus}</button>
+                <div class="t-body">1</div>
+                <button type="button" aria-label="Increase quantity">${ICON.plus}</button>
+              </div>
+              <div class="item__price t-body"><span>$79.99</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="offers">
+        <div class="offers__head">
+          <h3 class="t-h-md">Get extras for your product</h3>
+          ${arrows ? `<div class="arrows">
+            <button class="arrow arrow--prev" type="button" data-dir="-1" aria-label="Previous offer">${ICON.chevron}</button>
+            <button class="arrow arrow--next" type="button" data-dir="1" aria-label="Next offer">${ICON.chevron}</button>
+          </div>` : ''}
+        </div>
+        <div class="viewport${isPeek ? ' is-bleed' : ''}">
+          <div class="track">${slides}${isPeek ? '<div class="tail" aria-hidden="true"></div>' : ''}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="subtotal t-h-md"><span>Estimated total</span><span>$79.99</span></div>
+      <button class="btn btn--lg t-btn-lg" type="button">Checkout</button>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   CAROUSEL — one card per step
+   ============================================================ */
+function initCarousel(offers){
+  const viewport = offers.querySelector('.viewport');
+  const track    = offers.querySelector('.track');
+  const slides   = [...track.querySelectorAll('.slide')];
+  const arrows   = [...offers.querySelectorAll('.arrow')];
+
+  const step = () => slides[0].offsetWidth + parseFloat(getComputedStyle(track).columnGap || 0);
+  const max  = () => viewport.scrollWidth - viewport.clientWidth;
+
+  /* Raw (unclamped) card offsets. Stepping has to use these: near the end
+     several cards clamp to the same scroll offset, and stepping off the
+     clamped values is what used to freeze the back arrow on the last card. */
+  const raw = () => slides.map((_, i) => i * step());
+
+  /* index of the card whose snap offset sits closest to a given scroll x */
+  function nearestTo(x){
+    const m = max();
+    let best = 0, bestD = Infinity;
+    raw().forEach((v, i) => { const d = Math.abs(Math.min(v, m) - x); if (d <= bestD + 0.5){ bestD = d; best = i; } });
+    return best;
+  }
+
+  function sync(){
+    const m = max();
+    arrows.forEach(a => {
+      a.disabled = Number(a.dataset.dir) < 0 ? viewport.scrollLeft <= 1 : viewport.scrollLeft >= m - 1;
+    });
+  }
+  /* resizing the cart changes the card width under the carousel's feet, so
+     the arrow disabled state has to be recomputed without a re-render */
+  offers.__sync = sync;
+
+  function scrollToIndex(i){
+    const m = max();
+    const target = Math.max(0, Math.min(raw()[Math.max(0, Math.min(i, slides.length - 1))], m));
+    viewport.scrollTo({ left: target, behavior: 'smooth' });
+  }
+
+  function stepBy(dir){
+    const x = viewport.scrollLeft, offsets = raw();
+    if (dir > 0){
+      const next = offsets.findIndex(v => v > x + 1);
+      if (next !== -1) scrollToIndex(next);
+    } else {
+      let prev = -1;
+      offsets.forEach((v, i) => { if (v < x - 1) prev = i; });
+      if (prev !== -1) scrollToIndex(prev);
+    }
+  }
+
+  arrows.forEach(a => a.addEventListener('click', () => stepBy(Number(a.dataset.dir))));
+
+  let raf;
+  viewport.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(sync); }, { passive:true });
+
+  /* ---- mouse / trackpad drag -------------------------------------------
+     A desktop mouse has no horizontal scroll gesture, so click-and-drag
+     has to be built. Four things make it feel right:
+       1. pointer capture — the drag survives leaving the carousel
+       2. axis lock — a mostly-vertical gesture is handed back to the page
+       3. velocity projection — a flick keeps travelling after release
+       4. snapping stays off until the release animation has settled  */
+  const PROJECTION = 140;   // ms of coasting after release
+  const FLICK      = 0.32;  // px/ms above which a flick always advances a card
+
+  let drag = null, suppressClick = false;
+
+  function snapOff(on){ viewport.classList.toggle('no-snap', on); }
+
+  function settleThen(fn){
+    let done = false;
+    const finish = () => { if (done) return; done = true; clearTimeout(t); fn(); };
+    viewport.addEventListener('scrollend', finish, { once:true });
+    const t = setTimeout(finish, 700);   // fallback for browsers without scrollend
+  }
+
+  viewport.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch' || e.button !== 0) return;   // native touch scrolling is better
+    drag = {
+      id:e.pointerId, x0:e.clientX, y0:e.clientY, left0:viewport.scrollLeft,
+      lastX:e.clientX, lastT:performance.now(), v:0, axis:null
+    };
+    viewport.setPointerCapture(e.pointerId);
+  });
+
+  viewport.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+
+    if (!drag.axis){
+      if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+      if (Math.abs(dy) > Math.abs(dx)){ endDrag(); return; }   // vertical: let the page scroll
+      drag.axis = 'x';
+      viewport.classList.add('is-grabbing');
+      snapOff(true);
+    }
+
+    const now = performance.now(), dt = now - drag.lastT;
+    if (dt > 0){
+      const inst = (e.clientX - drag.lastX) / dt;
+      drag.v = drag.v * 0.7 + inst * 0.3;      // smoothed, so one stuttery frame can't throw the flick
+      drag.lastX = e.clientX; drag.lastT = now;
+    }
+    viewport.scrollLeft = drag.left0 - dx;
+    suppressClick = true;
+    e.preventDefault();
+  });
+
+  function endDrag(){
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (viewport.hasPointerCapture?.(d.id)) viewport.releasePointerCapture(d.id);
+    viewport.classList.remove('is-grabbing');
+
+    if (d.axis !== 'x'){ snapOff(false); return; }
+
+    /* where the carousel would coast to, then the card nearest that point */
+    const stale = performance.now() - d.lastT > 120;      // paused before releasing = no flick
+    const v = stale ? 0 : d.v;
+    let i = nearestTo(viewport.scrollLeft - v * PROJECTION);
+
+    if (Math.abs(v) > FLICK){
+      const from = nearestTo(d.left0);
+      if (v < 0) i = Math.max(i, from + 1);               // dragged left → next card
+      else       i = Math.min(i, from - 1);               // dragged right → previous card
+    }
+
+    scrollToIndex(i);
+    settleThen(() => snapOff(false));
+    setTimeout(() => { suppressClick = false; }, 80);   // fallback if no click follows
+  }
+
+  viewport.addEventListener('pointerup', endDrag);
+  viewport.addEventListener('pointercancel', endDrag);
+  viewport.addEventListener('lostpointercapture', endDrag);
+  viewport.addEventListener('dragstart', e => e.preventDefault());
+  viewport.addEventListener('click', e => {
+    if (suppressClick){                 // this click is the tail of a drag
+      e.preventDefault(); e.stopPropagation(); suppressClick = false;
+    }
+  }, true);
+
+  sync();
+}
+
+/* ============================================================
+   RENDER + CONTROLS
+   ============================================================ */
+const rig     = document.getElementById('rig');
+const frame   = document.getElementById('frame');
+const slider  = document.getElementById('c-width');
+const readout = document.getElementById('c-readout');
+const wbadge  = document.getElementById('wbadge');
+const grips   = [...document.querySelectorAll('.grip')];
+
+/* Width-only updates never touch innerHTML: re-rendering would reset the
+   carousel's scroll position, and dragging a grip would strobe. */
+function applyGeometry(){
+  const g = geo(), root = document.documentElement.style;
+  root.setProperty('--cr-cart-w',  state.width + 'px');
+  root.setProperty('--cr-slide-w', g.w + 'px');
+  root.setProperty('--cr-gap',     g.gap + 'px');
+  setSquircle(state.width);
+
+  const label = state.width + ' px';
+  readout.textContent = label;
+  wbadge.textContent  = g.peek ? `${label} · card ${g.w} · peek ${g.peek}` : `${label} · card ${g.w}`;
+  slider.value = state.width;
+  grips[0].classList.toggle('is-limit', state.width <= WMIN);
+  grips[1].classList.toggle('is-limit', state.width >= WMAX);
+
+  document.querySelector('.offers')?.__sync?.();
+}
+
+function render(){
+  frame.innerHTML = cartHtml();
+  applyGeometry();
+  initCarousel(document.querySelector('.offers'));
+}
+
+function setWidth(w){
+  const next = Math.round(Math.max(WMIN, Math.min(WMAX, w)));
+  if (next === state.width) return;
+  state.width = next;
+  applyGeometry();
+}
+
+function paintSegs(){
+  document.getElementById('c-style').querySelectorAll('button').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.val === state.style)));
+}
+
+document.getElementById('c-style').querySelectorAll('button').forEach(b =>
+  b.addEventListener('click', () => { state.style = b.dataset.val; paintSegs(); render(); }));
+
+['peek','arrows'].forEach(key => {
+  const el = document.getElementById('c-' + key);
+  el.checked = state[key];
+  el.addEventListener('change', () => { state[key] = el.checked; render(); });
+});
+
+slider.addEventListener('input', () => setWidth(Number(slider.value)));
+slider.addEventListener('pointerdown', () => rig.classList.add('is-resizing'));
+slider.addEventListener('pointerup',   () => rig.classList.remove('is-resizing'));
+slider.addEventListener('blur',        () => rig.classList.remove('is-resizing'));
+
+/* ---- edge grips -------------------------------------------------------
+   The cart is centred in the stage, so the rig's centre is fixed while the
+   width changes. Making an edge track the pointer exactly therefore means
+   width = 2 × |pointerX − centre|; a one-sided delta would lag by half. */
+grips.forEach(grip => {
+  const side = Number(grip.dataset.side);
+  grip.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    rig.classList.add('is-resizing');
+    const centre = rig.getBoundingClientRect().left + rig.offsetWidth / 2;
+    /* offset keeps the pill under the cursor instead of jumping to it */
+    const offset = (e.clientX - centre) * side - state.width / 2;
+
+    const move = ev => setWidth(2 * ((ev.clientX - centre) * side - offset));
+    const up = () => {
+      grip.removeEventListener('pointermove', move);
+      rig.classList.remove('is-resizing');
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up, { once:true });
+    grip.addEventListener('pointercancel', up, { once:true });
+  });
+});
+
+/* PDP links go nowhere in the prototype. Bubble phase, so the carousel's
+   capture-phase handler can swallow a click that is really a drag first. */
+document.addEventListener('click', e => {
+  if (e.target.closest('.pdp')) e.preventDefault();
+});
+
+paintSegs(); render();
+</script>
+</body>
+</html>
