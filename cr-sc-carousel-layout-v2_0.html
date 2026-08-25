@@ -228,9 +228,15 @@ body{
 
 /* Cart Offers */
 .offers{border-top:1px solid var(--cr-border); padding:var(--cr-pad); display:flex; flex-direction:column}
-.offers__head{display:flex; align-items:center; gap:2px; padding-bottom:16px}
-.offers__head h3{margin:0; flex:1 0 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.arrows{display:flex; align-items:center; gap:6px; flex:0 0 auto}
+.offers__head{display:flex; align-items:stretch; gap:16px; padding-bottom:16px}
+/* Figma "Title & Subtitle" stretches to the row height and centres its own
+   content, so a one-line title lands 7px down against 36px arrows. The
+   title does not truncate — textTruncation is DISABLED with no maxLines,
+   so the whole header grows instead (2.7 / 2.8). The subtitle itself lives
+   only in the Figma designs, not here. */
+.offers__titles{flex:1 0 0; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:2px}
+.offers__titles h3{margin:0}
+.arrows{display:flex; align-items:center; gap:6px; flex:0 0 auto; align-self:flex-end}
 .arrow{
   appearance:none; cursor:pointer; width:36px; height:36px; padding:8px;
   display:grid; place-items:center; color:var(--cr-icon-default);
@@ -529,7 +535,9 @@ function cartHtml(){
 
       <div class="offers">
         <div class="offers__head">
-          <h3 class="t-h-md">Get extras for your product</h3>
+          <div class="offers__titles">
+            <h3 class="t-h-md">Get extras for your product</h3>
+          </div>
           ${arrows ? `<div class="arrows">
             <button class="arrow arrow--prev" type="button" data-dir="-1" aria-label="Previous offer">${ICON.chevron}</button>
             <button class="arrow arrow--next" type="button" data-dir="1" aria-label="Next offer">${ICON.chevron}</button>
