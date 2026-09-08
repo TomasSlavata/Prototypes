@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bundle tier cards — responsive long-text prototype</title>
+<style>
+    :root {
+    /* iOS system palette for the prototype chrome */
+    --ios-bg: #ececed;
+    --ios-card: #ffffff;
+    --ios-seg-track: rgba(118, 118, 128, 0.12);
+    --ios-seg-thumb: #ffffff;
+    --ios-separator: rgba(60, 60, 67, 0.18);
+    --ios-label: #000000;
+    --ios-label-2: #3c3c43;
+    --ios-handle: #c7c7cc;
+
+    /* Tier card tokens (from Figma) */
+    --surface: #ffffff;
+    --text: #282a2c;
+    --text-secondary: rgba(40, 42, 44, 0.75);
+    --input-border: rgba(40, 42, 44, 0.4);
+    --input-border-hover: #282a2c;
+    --badge-bg: #f4f4f4;
+    --badge-text: #5b5d5e;
+    --save-bg: #d2280a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", sans-serif;
+    background: var(--ios-bg);
+    color: var(--ios-label);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 40px 20px 64px;
+  }
+
+  .page { max-width: 900px; margin: 0 auto; }
+
+  header { margin-bottom: 24px; }
+  h1 {
+    font-size: 22px; font-weight: 600; margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+  header p { font-size: 14px; color: var(--ios-label-2); margin: 0; max-width: 620px; }
+
+  /* ---- Control cards ---- */
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .control {
+    background: var(--ios-card);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: flex-start;   /* content starts at the top of every card */
+  }
+  .control.full { grid-column: 1 / -1; }
+  /* label on the left, control on the right, one row */
+  .control-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  /* Marks a setting that exists only in the prototype: it switches one of the
+     JS-driven layout rules off so you can compare. Not a product setting. */
+  .tag-js {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+    color: #5b5d5e; background: rgba(118,118,128,0.14);
+    padding: 1px 5px; border-radius: 4px;
+    margin-left: 6px; vertical-align: 1px;
+  }
+  .control-label {
+    font-size: 13px; line-height: 16px;
+    color: var(--ios-label-2); opacity: .75;
+    margin: 0;
+    letter-spacing: -0.08px;
+    white-space: nowrap;
+  }
+  .control-help {
+    font-size: 12px; line-height: 16px;
+    color: var(--ios-label-2); opacity: .55;
+    margin: 0; letter-spacing: -0.08px;
+  }
+
+  /* ---- iOS segmented control (values from the carousel prototype) ---- */
+  /* Fixed width for every segmented control, so the width never depends on
+     the label text or on how many options there are. */
+  .seg {
+    display: flex; padding: 2px; gap: 2px; height: 31px;
+    background: var(--ios-seg-track); border-radius: 9px;
+    width: 240px; flex: 0 0 240px;
+  }
+  .seg button {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 500; letter-spacing: -0.08px;
+    color: #000; padding: 0 4px; border-radius: 7px;
+    flex: 1 1 0; min-width: 0; height: 27px;
+    display: grid; place-items: center;
+    white-space: nowrap;
+    transition: background .2s ease, box-shadow .2s ease;
+  }
+  .seg button.active {
+    background: #fff; font-weight: 600;
+    box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04);
+  }
+  /* A setting that currently controls nothing goes quiet and stops taking input */
+  .control.is-off { opacity: .4; }
+  .control.is-off .seg button { cursor: default; }
+
+  /* ---- Preview stage: the white card IS the resizable column ---- */
+  .stage {
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 40px 40px 60px;
+  }
+  .rig { position: relative; display: flex; justify-content: center; }
+
+  .device {
+    position: relative;
+    background: var(--ios-card);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(40,42,44,0.14);
+    padding: 20px 16px;
+    width: 500px;
+    min-width: 320px;
+    flex: 0 0 auto;
+  }
+
+  /* Safari Responsive Design Mode pattern: a thin pill on each edge */
+  .grip {
+    position: absolute; top: 0; bottom: 0; width: 24px;
+    display: grid; place-items: center;
+    cursor: ew-resize; touch-action: none;
+    -webkit-user-select: none; user-select: none;
+  }
+  .grip--l { right: 100%; }
+  .grip--r { left: 100%; }
+  .grip::before {
+    content: ''; width: 4px; height: 44px; border-radius: 2px;
+    background: rgba(40,42,44,0.22); transition: background .15s ease;
+  }
+  .grip:hover::before { background: rgba(40,42,44,0.34); }
+  .rig.is-resizing .grip::before { background: rgba(40,42,44,0.38); }
+  .grip.is-limit::before { background: rgba(40,42,44,0.1); }
+
+  .wbadge {
+    position: absolute; left: 50%; top: 100%; margin-top: 14px;
+    transform: translateX(-50%);
+    padding: 3px 9px; border-radius: 7px; background: #1c1c1e; color: #fff;
+    font-size: 12px; line-height: 16px; letter-spacing: -0.08px;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .note {
+    font-size: 13px; line-height: 20px; color: var(--ios-label-2);
+    margin: 0 0 12px;
+    background: var(--ios-card); border-radius: 14px; padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .note strong { color: var(--ios-label); font-weight: 600; }
+
+  /* ---- Guidelines: one card, two nested accordions ---- */
+  /* Outer card holds the title; the two sections sit in a nested card,
+     separated by hairlines — same pattern as Shopify's settings groups. */
+  .guide-card {
+    background: var(--ios-card);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .guide-card > h3 {
+    font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+    margin: 0 0 12px;
+  }
+  .guide-group {
+    border: 1px solid rgba(60,60,67,0.12);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .guide + .guide { border-top: 1px solid rgba(60,60,67,0.12); }
+  .guide > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: background 120ms ease;
+  }
+  .guide > summary:hover { background: rgba(118,118,128,0.06); }
+  .guide[open] > summary { font-weight: 600; }
+  .guide > summary::-webkit-details-marker { display: none; }
+  /* chevron points down when closed, up when open.
+     The two borders form the arrow, so its optical centre shifts with the
+     rotation — the margin compensates for that, not for the layout. */
+  .guide > summary::after {
+    content: "";
+    width: 7px; height: 7px;
+    border-top: 1.5px solid rgba(60,60,67,0.5);
+    border-right: 1.5px solid rgba(60,60,67,0.5);
+    transform: rotate(135deg);
+    margin: -3px 2px 0 0;
+    transition: transform 150ms ease, margin-top 150ms ease;
+    flex: 0 0 auto;
+  }
+  .guide[open] > summary::after {
+    transform: rotate(-45deg);
+    margin-top: 3px;
+  }
+  .guide-body { padding: 0 16px 8px; }
+  .guide-body h4 {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--ios-label-2); opacity: .6;
+    margin: 16px 0 6px;
+  }
+  .guide-body ul { margin: 0; padding-left: 18px; }
+  .guide-body li {
+    font-size: 13px; line-height: 20px; color: var(--ios-label-2);
+    margin-bottom: 6px;
+  }
+
+  /* ---- Code preview ---- */
+  .code {
+    background: #1c1c1e; color: #e8e7e2; border-radius: 12px;
+    padding: 16px 20px; font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; line-height: 1.7; overflow-x: auto;
+    margin: 16px 0 8px;
+  }
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+    color: #8e8e93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .code pre { margin: 0; white-space: pre; font-family: inherit; }
+  .code .k { color: #c5a8e0; }
+  .code .p { color: #9ec5c5; }
+  .code .v { color: #e3b574; }
+  .code .c { color: #7d7a73; }
+
+  /* ---- Tiers ---- */
+  /* Without the price badge the cards need less breathing room, because the
+     badge no longer overhangs the card above. */
+  .tiers { display: flex; flex-direction: column; gap: var(--tier-gap, 14px); }
+
+  .tier {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--input-border);
+    padding: 17px 19px;
+    cursor: pointer;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+  .tier:hover { border-color: var(--input-border-hover); }
+  /* Selected state reads as a 2px border, but the border box stays 1px so the
+     padding box never moves — otherwise the absolutely positioned price badge
+     shifts by 1px every time another tier is selected. */
+  .tier.selected {
+    border-color: var(--input-border-hover);
+    box-shadow: inset 0 0 0 1px var(--input-border-hover);
+  }
+
+  .tier-row { display: flex; gap: 16px; align-items: center; }
+
+  .radio {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1px solid var(--input-border);
+    background: var(--surface);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tier.selected .radio { background: var(--text); border-color: var(--text); }
+  .radio svg { width: 11px; height: 8px; display: none; }
+  .tier.selected .radio svg { display: block; }
+
+  /* text + price columns live here */
+  .tier-main { flex: 1; min-width: 0; }
+
+  .tier-wrapper {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 20px;
+  }
+
+  .title-wrapper {
+    display: flex; flex-direction: column; gap: 2px; align-items: stretch;
+    flex: 1 1 auto; min-width: 0;
+  }
+  .title-row { display: flex; gap: 8px; align-items: center; min-width: 0; width: 100%; }
+
+  .title {
+    font-size: 16px; font-weight: 600; line-height: 22px; margin: 0;
+    color: var(--text); flex: 0 1 auto; min-width: 0;
+  }
+
+  .weight-badge {
+    flex-shrink: 0;
+    background: var(--badge-bg);
+    padding: 2px 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .weight-badge p {
+    margin: 0; font-size: 14px; font-weight: 600; line-height: 20px;
+    color: var(--badge-text); white-space: nowrap;
+  }
+
+  .subtitle {
+    margin: 0; font-size: 14px; font-weight: 400; line-height: 20px;
+    color: var(--text-secondary); min-width: 0; max-width: 100%;
+  }
+
+  .price-wrapper {
+    display: flex; flex-direction: column; gap: 2px; align-items: flex-end;
+    flex-shrink: 0; white-space: nowrap;
+    align-self: center;   /* always vertically centered in the card */
+    /* RULE: the right column never takes more than a set share of the card.
+       When the natural width would exceed this, the row below wraps instead. */
+  }
+  /* No fixed cap on the right column. The price keeps its natural width and
+     only gives way when the title genuinely needs the room (decided in JS in
+     syncSharedLayout). It may still shrink, so a very long price can never
+     overflow the card. */
+  .price-wrapper { flex-shrink: 1; }
+
+  /* RULE: prefix (struck-through price) may drop onto its own line, but
+     price + suffix always stay together on one line. */
+  .price-row {
+    display: flex; gap: 4px; align-items: baseline;
+    flex-wrap: wrap; justify-content: flex-end;
+  }
+  .price-row p { margin: 0; }
+  .price-main {
+    display: inline-flex; gap: 4px; align-items: baseline;
+    white-space: nowrap;   /* price and suffix never split */
+    flex-shrink: 0;
+  }
+  .price-old {
+    font-size: 14px; font-weight: 400; line-height: 20px;
+    color: var(--text-secondary); text-decoration: line-through;
+  }
+  .price-new { font-size: 16px; font-weight: 600; line-height: 22px; color: var(--text); }
+  .price-unit { font-size: 14px; font-weight: 400; line-height: 20px; color: var(--text-secondary); }
+  .price-total { margin: 0; font-size: 14px; font-weight: 400; line-height: 20px; color: var(--text-secondary); }
+
+  .save-badge {
+    position: absolute; top: -12px; right: 16px;
+    background: var(--save-bg);
+    padding: 2px 9px;
+    display: flex; align-items: center; justify-content: center;
+    max-width: calc(100% - 32px);
+  }
+  .save-badge p {
+    margin: 0; font-size: 14px; font-weight: 600; line-height: 20px;
+    color: #fff; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* Price prefix forced onto its own line in ALL cards at once by JS
+     (see syncSharedLayout), so the tiers stay visually consistent. */
+  .tiers.price-wrapped .price-old {
+    flex-basis: 100%;
+    text-align: right;
+  }
+  /* The column was sized from the UNWRAPPED single-line width and then capped.
+     Once the lines have wrapped, that capped width is wider than any actual
+     line, leaving dead space. min-content re-sizes the column to its widest
+     line, and the freed width goes to the title (flex: 1 1 0). */
+  .tiers.price-wrapped .price-wrapper {
+    width: min-content;
+  }
+
+  /* Weight badge moved below the title. Applied to ALL cards at once by JS
+     (see syncSharedLayout) so the tiers stay visually consistent. */
+  .tiers.badge-below .title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  /* =========================================================
+     BEHAVIOR A — Truncate (one line, price stays on the right)
+     ========================================================= */
+  .tiers[data-behavior="truncate"] .title {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tiers[data-behavior="truncate"] .subtitle {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* =========================================================
+     BEHAVIOR B — Wrap title (up to 2 lines, then ellipsis)
+     ========================================================= */
+  .tiers[data-behavior="wrap"] .title {
+    white-space: normal;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .tiers[data-behavior="wrap"] .subtitle {
+    white-space: normal;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* =========================================================
+     BEHAVIOR D — Wrap all: never truncate, no ellipsis ever.
+     Title and subtitle wrap onto as many lines as needed.
+     ========================================================= */
+  .tiers[data-behavior="wrap-all"] .title,
+  .tiers[data-behavior="wrap-all"] .subtitle {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: break-word;   /* break very long unbroken words */
+    word-break: normal;
+  }
+  /* Columns never touch: fixed 20px gap, price never shrinks. The text column
+     takes whatever remains and wraps onto as many lines as it needs. */
+  .tiers[data-behavior="wrap-all"] .title-wrapper {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="controls">
+      <div class="control">
+        <div class="control-row">
+          <p class="control-label">Tier title</p>
+          <div class="seg" id="seg-title">
+            <button data-val="short">Short</button>
+            <button data-val="medium" class="active">Medium</button>
+            <button data-val="long">Long</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="control-row">
+          <p class="control-label">Tier subtitle</p>
+          <div class="seg" id="seg-subtitle">
+            <button data-val="none">None</button>
+            <button data-val="short" class="active">Short</button>
+            <button data-val="long">Long</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="control-row">
+          <p class="control-label">Price</p>
+          <div class="seg" id="seg-price">
+            <button data-val="short">Short</button>
+            <button data-val="medium" class="active">Medium</button>
+            <button data-val="long">Long</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control" id="card-suffix">
+        <div class="control-row">
+          <p class="control-label">Price suffix</p>
+          <div class="seg" id="seg-suffix">
+            <button data-val="off">Off</button>
+            <button data-val="on" class="active">On</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="control-row">
+          <p class="control-label">Price badge</p>
+          <div class="seg" id="seg-save">
+            <button data-val="off">Off</button>
+            <button data-val="percent" class="active">Save 25%</button>
+            <button data-val="long">Long</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="control-row">
+          <p class="control-label">Title badge</p>
+          <div class="seg" id="seg-weight">
+            <button data-val="off">Off</button>
+            <button data-val="on" class="active">On</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control" id="card-badgesync">
+        <div class="control-row">
+          <p class="control-label">Badge wrap <span class="tag-js">JS</span></p>
+          <div class="seg" id="seg-badgesync">
+            <button data-val="off">Off</button>
+            <button data-val="on" class="active">On</button>
+          </div>
+        </div>
+        <p class="control-help">Title badge moves below the title when the title wraps — in all cards at once. Always on in production; here you can switch it off to compare.</p>
+      </div>
+
+      <div class="control" id="card-pricesync">
+        <div class="control-row">
+          <p class="control-label">Price wrap <span class="tag-js">JS</span></p>
+          <div class="seg" id="seg-pricesync">
+            <button data-val="off">Off</button>
+            <button data-val="on" class="active">On</button>
+          </div>
+        </div>
+        <p class="control-help">When the text needs the room, the price drops below the prefix — in every card at once, following whichever tier needs it most. Always on in production; here you can switch it off to compare.</p>
+      </div>
+
+      <!-- Behavior locked to "wrap all (no ellipsis)" -->
+      <div class="control" id="behavior-control" style="display:none;">
+        <div class="control-row">
+          <p class="control-label">Behavior</p>
+          <div class="seg" id="seg-behavior">
+            <button data-val="truncate">Truncate</button>
+            <button data-val="wrap">Wrap 2</button>
+            <button data-val="wrap-all" class="active">Wrap all</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="rig" id="rig">
+        <div class="device" id="device">
+          <div class="tiers" id="tiers" data-behavior="wrap-all"></div>
+        </div>
+        <div class="grip grip--l" id="handle-left"></div>
+        <div class="grip grip--r" id="handle-right"></div>
+        <div class="wbadge" id="width-tip">500 px</div>
+      </div>
+    </div>
+
+    <div class="guide-card">
+      <h3>Responsive layout guidelines</h3>
+
+      <div class="guide-group">
+      <details class="guide" open>
+        <summary>UI notes</summary>
+      <div class="guide-body">
+        <h4>Left column</h4>
+        <ul>
+          <li>Title and subtitle never truncate. No ellipsis — the text always wraps onto more lines.</li>
+          <li>Words break only as a last resort — only when a single word does not fit even a full line.</li>
+        </ul>
+
+        <h4>Right column</h4>
+        <ul>
+          <li>Price and price suffix always stay together on one line (“$7.49 / ea” never splits).</li>
+          <li>Price prefix may wrap onto its own line.</li>
+          <li>Price is always vertically centered in the card.</li>
+        </ul>
+
+        <h4>Column relationship</h4>
+        <ul>
+          <li>The gap between the left and right column is 20px.</li>
+          <li>When the title or subtitle no longer fits in two lines, the price splits onto two lines — price prefix on the first, price and price suffix on the second — freeing width for the text.</li>
+          <li>The left column gets all the space the right column does not need — when the price splits, the freed width goes to the text.</li>
+        </ul>
+
+        <h4>Title badge</h4>
+        <ul>
+          <li>The badge sits beside the title as long as both fit on one line.</li>
+          <li>Once the title and badge no longer fit on one line, the badge moves below the title.</li>
+        </ul>
+
+        <h4>Consistency across cards</h4>
+        <ul>
+          <li>What happens in one card happens in all of them. When the badge moves below the title, or the price splits onto two lines, it applies to every tier at once.</li>
+        </ul>
+      </div>
+    </details>
+
+      <details class="guide">
+        <summary>Claude’s dev notes</summary>
+      <div class="guide-body">
+        <h4>Why CSS alone is not enough</h4>
+        <ul>
+          <li>“The title wrapped” is not a CSS condition. There is no selector for “this text wrapped onto two lines”.</li>
+          <li>CSS cannot pass state between cards. There is no way to say “if it happened in one card, apply it to its siblings”.</li>
+          <li>JS therefore only measures how many lines the text actually occupies and toggles two CSS rules accordingly. All rendering is still done by CSS.</li>
+        </ul>
+
+        <h4>Implementation notes</h4>
+        <ul>
+          <li>Assume nothing about typography. In the merchant’s theme the title can have any font size and line height — the line count has to be measured, not derived from a constant.</li>
+          <li>Always measure in the same baseline state, with both rules switched off. Otherwise the layout flickers between two states as the width changes.</li>
+          <li>Re-measure once the theme’s fonts have loaded. Before that the text widths differ and the decision is made on the wrong numbers.</li>
+          <li>The order of the decisions is not arbitrary. Badge placement is derived from the title; splitting the price is a choice. First try the price on one line, derive the badge from the result and check the limits; only if that fails does the price give way. With a fixed order for both rules the layout over-corrects — it makes both concessions where one was enough.</li>
+        </ul>
+
+        <div class="code">
+          <div class="code-header">
+            <span>CSS — layout rules</span>
+        <span id="code-tag">wrap-all</span>
+          </div>
+          <pre id="code-body"></pre>
+      <div class="code-header" style="margin-top:22px;">
+            <span>JS — the decision (all rendering stays in CSS)</span>
+          </div>
+          <pre id="code-js"></pre>
+        </div>
+      </div>
+      </details>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+<script>
+(function () {
+  // ---- tier data (index 0..3) ----
+  /* Tier 1 is the plain single-unit price: no discount, so no compare-at
+     price and no savings badge. The discount only starts from tier 2, which
+     is what makes buying more worthwhile. The compare-at price is the same
+     single-unit price in every discounted tier — it is the price the customer
+     avoids by taking the bundle.
+
+     Tier 4 is a 12-pack, so in the "long" price variant its total runs to five
+     digits ($10,128.00) while the others stay at four. That difference is what
+     makes the "price wraps in all cards" rule visible: tier 4 runs out of room
+     first, and the other cards follow it. */
+  const tiers = [
+    { count: 1, weight: '1kg', servings: 30, discount: false,
+      unit: '$9.99', total: '$9.99',
+      unitL: '$1,299.00', totalL: '$1,299.00' },
+    { count: 2, weight: '2kg', servings: 60, discount: true,
+      old: '$9.99', unit: '$7.49', total: '$14.98', saveAmt: '$5.00', savePct: '25%',
+      oldL: '$1,299.00', unitL: '$974.00', totalL: '$1,948.00' },
+    { count: 3, weight: '3kg', servings: 90, discount: true,
+      old: '$9.99', unit: '$6.99', total: '$20.97', saveAmt: '$9.00', savePct: '30%',
+      oldL: '$1,299.00', unitL: '$909.00', totalL: '$2,727.00' },
+    { count: 12, weight: '12kg', servings: 360, discount: true,
+      old: '$9.99', unit: '$6.49', total: '$77.88', saveAmt: '$42.00', savePct: '35%',
+      oldL: '$1,299.00', unitL: '$844.00', totalL: '$10,128.00' },
+  ];
+
+  // Price block at three lengths. Structure follows the admin naming:
+  //   price prefix = struck-through compare-at price
+  //   price        = the actual price
+  //   price suffix = "/ ea" or "/ each"
+  // Price + suffix are wrapped together in .price-main so they can never split.
+  const priceHtml = (t, len) => {
+    if (len === 'short') {
+      return `<div class="price-row">
+                <span class="price-main"><p class="price-new">${t.unit}</p></span>
+              </div>`;
+    }
+    const suffix = (txt) =>
+      state.suffix === 'on' ? `<p class="price-unit">${txt}</p>` : '';
+
+    // The prefix only exists where there is a discount to compare against.
+    const prefix = (txt) => t.discount ? `<p class="price-old">${txt}</p>` : '';
+
+    if (len === 'medium') {
+      return `<div class="price-row">
+                ${prefix(t.old)}
+                <span class="price-main">
+                  <p class="price-new">${t.unit}</p>
+                  ${suffix('/ ea')}
+                </span>
+              </div>
+              <p class="price-total">${t.total} total</p>`;
+    }
+    return `<div class="price-row">
+              ${prefix(t.oldL)}
+              <span class="price-main">
+                <p class="price-new">${t.unitL}</p>
+                ${suffix('/ each')}
+              </span>
+            </div>
+            <p class="price-total">${t.totalL} total</p>`;
+  };
+
+  const titleText = (t, len) => {
+    const noun = t.count === 1 ? 'tub' : 'tubs';
+    if (len === 'short')  return `${t.count} ${noun}`;
+    if (len === 'medium') return `${t.count} ${noun} of whey protein`;
+    return `${t.count} ${noun} of premium chocolate whey protein isolate`;
+  };
+  const subtitleText = (t, len) => {
+    if (len === 'none')  return '';
+    if (len === 'short') return `${t.servings} servings`;
+    return `${t.servings} servings · best value for daily use`;
+  };
+  const saveText = (t, mode) => {
+    if (!t.discount)        return '';   // tier 1 has nothing to save
+    if (mode === 'off')     return '';
+    if (mode === 'percent') return `Save ${t.savePct}`;
+    return `Save ${t.saveAmt} (${t.savePct} off)`;
+  };
+
+  const state = {
+    title: 'medium', subtitle: 'short', weight: 'on', price: 'medium',
+    save: 'percent', behavior: 'wrap-all', count: 4, selected: 1, suffix: 'on',
+    badgesync: 'on', pricesync: 'on',
+  };
+
+  const tiersHost = document.getElementById('tiers');
+
+  function buildTier(i) {
+    const t = tiers[i];
+    const tier = document.createElement('div');
+    tier.className = 'tier' + (i === state.selected ? ' selected' : '');
+    tier.addEventListener('click', () => { state.selected = i; render(); });
+
+    const sub = subtitleText(t, state.subtitle);
+    const save = saveText(t, state.save);
+
+    tier.innerHTML = `
+      <div class="tier-row">
+        <div class="radio" aria-hidden="true">
+          <svg viewBox="0 0 11 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 4L4 7L10 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="tier-main">
+          <div class="tier-wrapper">
+            <div class="title-wrapper">
+              <div class="title-row">
+                <p class="title">${titleText(t, state.title)}</p>
+                ${state.weight === 'on' ? `<div class="weight-badge"><p>${t.weight}</p></div>` : ''}
+              </div>
+              ${sub ? `<p class="subtitle">${sub}</p>` : ''}
+            </div>
+            <div class="price-wrapper">
+              ${priceHtml(t, state.price)}
+            </div>
+          </div>
+        </div>
+      </div>
+      ${save ? `<div class="save-badge"><p>${save}</p></div>` : ''}
+    `;
+    return tier;
+  }
+
+  /* How many lines this element currently occupies.
+
+     Nothing about the typography is assumed: Candy Rack runs inside the
+     merchant's theme, so font-size and line-height are whatever that theme
+     sets, and line-height may even be "normal" (no usable computed number).
+     So we measure the element's own single-line height by forcing nowrap for
+     one reflow, then divide. */
+  function lineCount(el) {
+    const full = el.getBoundingClientRect().height;
+    const prev = el.style.whiteSpace;
+    el.style.whiteSpace = 'nowrap';
+    const oneLine = el.getBoundingClientRect().height;
+    el.style.whiteSpace = prev;
+    return oneLine > 0 ? Math.round(full / oneLine) : 1;
+  }
+
+  /* Worst (highest) line count for a selector across all cards. */
+  function maxLines(selector) {
+    let worst = 0;
+    tiersHost.querySelectorAll(selector).forEach(el => {
+      const lines = lineCount(el);
+      if (lines > worst) worst = lines;
+    });
+    return worst;
+  }
+
+  /* Two "if it happens in one card, it happens in all cards" concessions:
+       badge-below     — the title badge drops under the title
+       price-wrapped   — the price+suffix drop under the price prefix
+     CSS can express neither (no "did this text wrap?" test, and no way to let
+     one card affect its siblings), so we measure.
+
+     The two are not equal, and that is what decides the algorithm:
+
+       badge-below is DERIVED. The rule is simply "if the title takes more than
+       one line, the badge does not belong beside it". So it is read off the
+       title, never chosen to avoid something else.
+
+       price-wrapped is a CHOICE. The price should keep one line while the text
+       still fits its line limits, and only give way when it does not.
+
+     So: try the price unwrapped first, derive the badge from the resulting
+     title, and check the limits. Only if that fails do we wrap the price and
+     derive the badge again. Deciding the two in a fixed order (either order)
+     over-corrected, because whichever went first could not see that the other
+     was about to free up width.
+
+     Every candidate is measured from a clean state, so the outcome depends
+     only on the current width and content and cannot oscillate. */
+  function syncSharedLayout() {
+    const wantBadge = state.badgesync === 'on' && state.weight === 'on';
+    const wantPrice = state.pricesync === 'on';
+
+    const MAX_TITLE_LINES = 2;
+    const MAX_SUBTITLE_LINES = 2;
+
+    // Apply a price state, then derive the badge from the title it produces.
+    function evaluate(priceWrapped) {
+      tiersHost.classList.toggle('price-wrapped', priceWrapped);
+      tiersHost.classList.remove('badge-below');
+      void tiersHost.offsetWidth;
+
+      const badgeBelow = wantBadge && maxLines('.title') > 1;
+      tiersHost.classList.toggle('badge-below', badgeBelow);
+      void tiersHost.offsetWidth;
+
+      return {
+        fits: maxLines('.title') <= MAX_TITLE_LINES &&
+              maxLines('.subtitle') <= MAX_SUBTITLE_LINES,
+      };
+    }
+
+    // Preferred: price on one line.
+    if (evaluate(false).fits || !wantPrice) return;
+
+    // Otherwise let the price give way. This is the last concession available,
+    // so it stands even if the text still overflows its limits.
+    evaluate(true);
+  }
+
+
+  const notes = {
+    truncate: 'The title shrinks and ends with “…”. The price never breaks — it stays on one line on the right. Best when the price must always be fully visible. Risk: a long title is cut, so the key word may be lost.',
+    wrap: 'The title can use up to 2 lines, then ends with “…”. The price sits at the right, vertically centered. Best when the full title matters more than card height. Risk: cards get taller and less even.',
+    'wrap-all': 'Nothing is ever cut. Title and subtitle wrap onto as many lines as they need and the card grows in height. The price stays on one line, vertically centered, with a fixed 20px gap. Best when every word must stay readable. Risk: the price column is fixed, so at narrow widths with a long price the text column gets thin and the card gets tall.',
+  };
+
+  const codeFor = {
+    truncate:
+`<span class="c">/* 20px gap, price vertically centered */</span>
+<span class="p">.tier-wrapper</span> { <span class="k">gap</span>: <span class="v">20px</span>; }
+<span class="p">.title-wrapper</span> { <span class="k">flex</span>: <span class="v">1 1 auto</span>; <span class="k">min-width</span>: <span class="v">0</span>; }
+<span class="p">.price-wrapper</span> { <span class="k">flex-shrink</span>: <span class="v">0</span>; <span class="k">align-self</span>: <span class="v">center</span>; }
+
+<span class="c">/* Title and subtitle truncate on one line */</span>
+<span class="p">.title</span>, <span class="p">.subtitle</span> {
+  <span class="k">white-space</span>: <span class="v">nowrap</span>;
+  <span class="k">overflow</span>: <span class="v">hidden</span>;
+  <span class="k">text-overflow</span>: <span class="v">ellipsis</span>;
+}`,
+    wrap:
+`<span class="c">/* 20px gap, price vertically centered */</span>
+<span class="p">.tier-wrapper</span> { <span class="k">gap</span>: <span class="v">20px</span>; }
+<span class="p">.price-wrapper</span> { <span class="k">flex-shrink</span>: <span class="v">0</span>; <span class="k">align-self</span>: <span class="v">center</span>; }
+
+<span class="c">/* Title wraps to a maximum of 2 lines */</span>
+<span class="p">.title</span> {
+  <span class="k">display</span>: <span class="v">-webkit-box</span>;
+  <span class="k">-webkit-line-clamp</span>: <span class="v">2</span>;
+  <span class="k">-webkit-box-orient</span>: <span class="v">vertical</span>;
+  <span class="k">overflow</span>: <span class="v">hidden</span>;
+}`,
+    'wrap-all':
+`<span class="c">/* 20px gap, columns never touch, price vertically centered */</span>
+<span class="p">.tier-wrapper</span> { <span class="k">gap</span>: <span class="v">20px</span>; <span class="k">align-items</span>: <span class="v">center</span>; }
+<span class="p">.title-wrapper</span> { <span class="k">flex</span>: <span class="v">1 1 0</span>; <span class="k">min-width</span>: <span class="v">0</span>; }
+<span class="p">.price-wrapper</span> {
+  <span class="k">flex-shrink</span>: <span class="v">1</span>;
+  <span class="k">align-self</span>: <span class="v">center</span>;
+}
+
+<span class="c">/* No ellipsis — wrap onto as many lines as needed */</span>
+<span class="p">.title</span>, <span class="p">.subtitle</span> {
+  <span class="k">white-space</span>: <span class="v">normal</span>;
+  <span class="k">overflow</span>: <span class="v">visible</span>;
+  <span class="k">overflow-wrap</span>: <span class="v">break-word</span>;
+}
+
+<span class="c">/* Price + suffix never split; prefix may take its own line */</span>
+<span class="p">.price-row</span> { <span class="k">flex-wrap</span>: <span class="v">wrap</span>; <span class="k">justify-content</span>: <span class="v">flex-end</span>; }
+<span class="p">.price-main</span> { <span class="k">white-space</span>: <span class="v">nowrap</span>; <span class="k">flex-shrink</span>: <span class="v">0</span>; }
+
+<span class="c">/* The two states JS toggles on the container, never per card */</span>
+<span class="p">.tiers.price-wrapped</span> <span class="p">.price-old</span> { <span class="k">flex-basis</span>: <span class="v">100%</span>; <span class="k">text-align</span>: <span class="v">right</span>; }
+<span class="p">.tiers.badge-below</span> <span class="p">.title-row</span> { <span class="k">flex-direction</span>: <span class="v">column</span>; <span class="k">align-items</span>: <span class="v">flex-start</span>; }
+
+<span class="c">/* Required: once the price has split, the column was still sized from its
+   unwrapped width. min-content shrinks it to its widest line so the freed
+   space actually reaches the text. */</span>
+<span class="p">.tiers.price-wrapped</span> <span class="p">.price-wrapper</span> { <span class="k">width</span>: <span class="v">min-content</span>; }`,
+  };
+
+  function setCardDisabled(cardId, off) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    card.classList.toggle('is-off', off);
+    card.querySelectorAll('.seg button').forEach(b => { b.disabled = off; });
+  }
+
+  const jsSnippet =
+`<span class="c">// Line count, measured — never derived from a line-height constant.</span>
+<span class="k">function</span> <span class="p">lineCount</span>(el) {
+  <span class="k">const</span> full = el.getBoundingClientRect().height;
+  <span class="k">const</span> prev = el.style.whiteSpace;
+  el.style.whiteSpace = <span class="v">'nowrap'</span>;          <span class="c">// one-line height of THIS element</span>
+  <span class="k">const</span> one = el.getBoundingClientRect().height;
+  el.style.whiteSpace = prev;
+  <span class="k">return</span> one > 0 ? Math.round(full / one) : 1;
+}
+
+<span class="c">// Apply a price state, then DERIVE the badge from the title it produces.</span>
+<span class="k">function</span> <span class="p">evaluate</span>(priceWrapped) {
+  tiers.classList.toggle(<span class="v">'price-wrapped'</span>, priceWrapped);
+  tiers.classList.remove(<span class="v">'badge-below'</span>);
+  <span class="k">void</span> tiers.offsetWidth;                <span class="c">// force reflow before measuring</span>
+
+  tiers.classList.toggle(<span class="v">'badge-below'</span>, maxLines(<span class="v">'.title'</span>) > 1);
+  <span class="k">void</span> tiers.offsetWidth;
+
+  <span class="k">return</span> maxLines(<span class="v">'.title'</span>) <= 2 && maxLines(<span class="v">'.subtitle'</span>) <= 2;
+}
+
+<span class="c">// Prefer the price on one line; let it give way only if that fails.</span>
+<span class="k">function</span> <span class="p">sync</span>() {
+  <span class="k">if</span> (evaluate(<span class="v">false</span>)) <span class="k">return</span>;
+  evaluate(<span class="v">true</span>);
+}
+
+<span class="c">// maxLines() takes the worst card, so one tier decides for all of them.</span>
+<span class="c">// Re-run on any width change, and again after the theme fonts load.</span>
+<span class="k">new</span> ResizeObserver(sync).observe(card);
+document.fonts.ready.then(sync);`;
+
+  function render() {
+    if (state.selected > state.count - 1) state.selected = 0;
+
+
+    // A setting is disabled when nothing it controls is on screen:
+    //   Price suffix  — the short price has no suffix
+    //   Price wrap    — the short price has no prefix to wrap under
+    //   Badge wrap    — there is no title badge to move
+    setCardDisabled('card-suffix',    state.price === 'short');
+    setCardDisabled('card-pricesync', state.price === 'short');
+    setCardDisabled('card-badgesync', state.weight === 'off');
+
+    tiersHost.setAttribute('data-behavior', state.behavior);
+    tiersHost.style.setProperty('--tier-gap', state.save === 'off' ? '10px' : '14px');
+    tiersHost.innerHTML = '';
+    for (let i = 0; i < state.count; i++) tiersHost.appendChild(buildTier(i));
+
+    syncSharedLayout();
+
+    document.getElementById('code-tag').textContent = state.behavior;
+    document.getElementById('code-body').innerHTML =
+      codeFor[state.behavior];
+    document.getElementById('code-js').innerHTML = jsSnippet;
+  }
+
+  // wire up segmented controls
+  function wireSeg(id, key) {
+    const group = document.getElementById(id);
+    group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state[key] = btn.dataset.val;
+        render();
+      });
+    });
+  }
+  wireSeg('seg-title', 'title');
+  wireSeg('seg-subtitle', 'subtitle');
+  wireSeg('seg-weight', 'weight');
+  wireSeg('seg-price', 'price');
+  wireSeg('seg-badgesync', 'badgesync');
+  wireSeg('seg-pricesync', 'pricesync');
+  wireSeg('seg-suffix', 'suffix');
+  wireSeg('seg-save', 'save');
+  wireSeg('seg-behavior', 'behavior');
+
+
+  /* ---- Column resize: drag either edge, the card stays centered ---- */
+  const device = document.getElementById('device');
+  const widthTip = document.getElementById('width-tip');
+  const stage = document.querySelector('.stage');
+
+  const MIN_W = 320;
+  function maxWidth() {
+    // leave room for the handles on both sides
+    return Math.max(MIN_W, stage.clientWidth - 80);
+  }
+
+  // The width the user asked for. Kept separately so that temporarily
+  // narrowing the browser window clamps the card without forgetting the
+  // chosen column width.
+  let desiredW = 500;
+
+  function setWidth(px, fromUser) {
+    if (fromUser) desiredW = px;
+    const w = Math.round(Math.min(Math.max(px, MIN_W), maxWidth()));
+    device.style.width = w + 'px';
+    showWidth();
+    syncSharedLayout();
+  }
+
+  function showWidth() {
+    // Width of the column the bundle section sits in (the product info column
+    // next to the photo gallery), not the viewport.
+    widthTip.textContent = Math.round(device.offsetWidth) + ' px';
+    updateLimits();
+  }
+
+  const rig = document.getElementById('rig');
+  const gripL = document.getElementById('handle-left');
+  const gripR = document.getElementById('handle-right');
+
+  function updateLimits() {
+    const w = device.offsetWidth;
+    const atMin = w <= MIN_W;
+    const atMax = w >= maxWidth();
+    gripL.classList.toggle('is-limit', atMin || atMax);
+    gripR.classList.toggle('is-limit', atMin || atMax);
+  }
+
+  function startDrag(handleSide, e) {
+    e.preventDefault();
+    rig.classList.add('is-resizing');
+    const startX = (e.touches ? e.touches[0].clientX : e.clientX);
+    const startW = device.offsetWidth;
+
+    function onMove(ev) {
+      const x = (ev.touches ? ev.touches[0].clientX : ev.clientX);
+      const delta = x - startX;
+      // card is centred, so each edge changes the width by 2x the drag
+      setWidth(handleSide === 'right' ? startW + delta * 2 : startW - delta * 2, true);
+    }
+    function onUp() {
+      rig.classList.remove('is-resizing');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+      document.body.style.userSelect = '';
+    }
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+  }
+
+  document.getElementById('handle-left')
+    .addEventListener('mousedown', e => startDrag('left', e));
+  document.getElementById('handle-right')
+    .addEventListener('mousedown', e => startDrag('right', e));
+  document.getElementById('handle-left')
+    .addEventListener('touchstart', e => startDrag('left', e), { passive: false });
+  document.getElementById('handle-right')
+    .addEventListener('touchstart', e => startDrag('right', e), { passive: false });
+
+  window.addEventListener('resize', () => setWidth(desiredW));
+
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => syncSharedLayout()).observe(device);
+  }
+
+  render();
+  setWidth(500, true);
+})();
+</script>
+</body>
+</html>
