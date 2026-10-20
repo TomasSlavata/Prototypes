@@ -158,8 +158,11 @@ body{
 /* ============================================================
    SLIDE CART — 393 × 740
    ============================================================ */
+/* 740px is the minimum, not a fixed height: when the offers grow (Smart
+   layout off, long descriptions) the cart grows with them instead of the
+   offers running under the footer */
 .cart{
-  width:var(--cr-cart-w); height:var(--cr-cart-h);
+  width:var(--cr-cart-w); min-height:var(--cr-cart-h);
   background:var(--cr-bg-surface); overflow:hidden;
   display:flex; flex-direction:column; color:var(--cr-text);
   /* 32px corners with 60% corner smoothing — see squirclePath() */
@@ -334,6 +337,11 @@ body{
   overflow:hidden; text-overflow:ellipsis;
 }
 .offer__price{display:flex; flex-wrap:wrap; align-items:center; gap:0 6px; padding-top:2px; white-space:nowrap}
+/* Description — Figma Offer Card "Description" (8px above, Body 14/20,
+   text/secondary, no truncation: it wraps). Not shown in the Figma frames,
+   but part of the component. Like the name it wraps, so it never raises the
+   Smart layout limit. */
+.offer__desc{padding-top:8px; color:var(--cr-text-secondary); overflow-wrap:anywhere}
 
 /* Badge — Figma Offer Card "Badge" (hug, padding 2/9, 6px below).
    Figma leaves truncation undefined; in a narrow carousel card a long label
@@ -362,11 +370,15 @@ body{
 }
 .is-stacked .offer__thumb,
 .is-stacked .offer__body{grid-row:1}
-.is-stacked .offer__btn{grid-row:4; grid-column:1 / -1; justify-content:stretch; min-height:0; padding:12px 0 0}
+.is-stacked .offer__btn{grid-row:4; grid-column:1 / -1; justify-content:stretch; min-height:0; padding:16px 0 0}
 .is-stacked .offer__btn .btn{width:100%}
 /* the variant select leaves the text column too and sits above the button,
    full card width (moved in the DOM by placeVariants, so it keeps its value) */
-.is-stacked .offer > .offer__variant{grid-row:3; grid-column:1 / -1; padding-top:12px}
+.is-stacked .offer > .offer__variant{grid-row:3; grid-column:1 / -1; padding-top:16px}
+/* 16px between the product block and whatever comes first below it (the
+   select, or the button on its own) — the same as above the select side by
+   side. Select → button stays 12px. */
+.is-stacked .offer > .offer__variant + .offer__btn{padding-top:12px}
 
 /* Variant select — Figma Offer Card "Variant" (16px above, 40px Select:
    padding 10/12/10/16, gap 8, 1px input border, text-input radius). The
@@ -415,6 +427,10 @@ body{
         <label class="switch"><input type="checkbox" id="c-uppercase"><i></i></label>
       </div>
       <div class="ctrl">
+        <span class="ctrl__label">Description</span>
+        <div class="seg seg--num" id="c-desc" aria-label="Which cards show a description"><button data-val="off">Off</button><button data-val="all">All</button><button data-val="0">1</button><button data-val="1">2</button><button data-val="2">3</button><button data-val="3">4</button></div>
+      </div>
+      <div class="ctrl">
         <span class="ctrl__label">Select</span>
         <div class="seg seg--num" id="c-select" aria-label="Which cards show a variant select"><button data-val="off">Off</button><button data-val="all">All</button><button data-val="0">1</button><button data-val="1">2</button><button data-val="2">3</button><button data-val="3">4</button></div>
       </div>
@@ -429,6 +445,7 @@ body{
         <span class="ctrl__label">Smart layout</span>
         <label class="switch"><input type="checkbox" id="c-stack"><i></i></label>
       </div>
+
     </div>
   </div>
 </div>
@@ -486,10 +503,10 @@ a ${n(r)} ${n(r)} 0 0 1 ${n(arc)} ${n(-arc)} \
 c ${n(c)} ${n(-d)} ${n(b + c)} ${n(-d)} ${n(abc)} ${n(-d)} Z")`;
 }
 
-/* clip-path is an absolute path, not a relative shape — every width change
-   needs a fresh one or the corners drift off the frame */
-const setSquircle = w =>
-  document.documentElement.style.setProperty('--cr-squircle', squirclePath(w, 740, 32, 0.6));
+/* clip-path is an absolute path, not a relative shape — every width or
+   height change needs a fresh one or the corners drift off the frame */
+const setSquircle = (w, h = 740) =>
+  document.documentElement.style.setProperty('--cr-squircle', squirclePath(w, h, 32, 0.6));
 
 /* ============================================================
    ICONS — exported from the Figma slide cart components
@@ -528,10 +545,10 @@ const ART = {
 };
 
 const PRODUCTS = [
-  { name:'Happy Stripe Socks', regular:'$19.99', price:'$9.99',  badge:'Recommended',      variants:['M / Multicolor','L / Multicolor','S / Multicolor'], file:'socks.png',        art:ART.socks },
-  { name:"Nike Men's Dri-FIT", regular:'$79.99', price:'$69.99', badge:'Save $10.00',      variants:['L / Black','M / Black','XL / Black'], file:'dri-fit.png',      art:ART.shorts },
-  { name:'Nike Backpack',      regular:null,     price:'$49.99', badge:'New',              variants:null, file:'backpack.png',     art:ART.backpack },
-  { name:'Nike Sneaker Sock',  regular:null,     price:'$9.99',  badge:'Limited time offer', variants:['39–42 / White','43–46 / White','39–42 / Black'], file:'sneaker-sock.png', art:ART.sock }
+  { name:'Happy Stripe Socks', regular:'$19.99', price:'$9.99',  badge:'Recommended',      variants:['M / Multicolor','L / Multicolor','S / Multicolor'], desc:'Soft cotton socks with colorful stripes, 3 pairs in a pack.', file:'socks.png',        art:ART.socks },
+  { name:"Nike Men's Dri-FIT", regular:'$79.99', price:'$69.99', badge:'Save $10.00',      variants:['L / Black','M / Black','XL / Black'], desc:'Lightweight running shorts with sweat-wicking Dri-FIT fabric.', file:'dri-fit.png',      art:ART.shorts },
+  { name:'Nike Backpack',      regular:null,     price:'$49.99', badge:'New',              variants:null, desc:'Everyday backpack with a padded laptop sleeve and two side pockets.', file:'backpack.png',     art:ART.backpack },
+  { name:'Nike Sneaker Sock',  regular:null,     price:'$9.99',  badge:'Limited time offer', variants:['39–42 / White','43–46 / White','39–42 / Black'], desc:'Low-cut sneaker socks with a cushioned sole.', file:'sneaker-sock.png', art:ART.sock }
 ];
 
 /* ============================================================
@@ -553,7 +570,7 @@ const GAP  = { card:12, standard:20 };
 const PEEK = [[380, 28], [480, 40], [580, 80], [Infinity, 160]];
 const peekFor = w => PEEK.find(([limit]) => w < limit)[1];
 
-const state = { style:'card', peek:true, arrows:true, width:393, badge:'all', uppercase:true, select:'all', stack:true, btn:'short' };
+const state = { style:'card', peek:true, arrows:true, width:393, badge:'all', uppercase:true, desc:'off', select:'all', stack:true, btn:'short' };
 const BTN_LABEL = { short:'Add', long:'Add to cart' };
 /* Smallest text column the side-by-side card may have: room for the name
    (wraps to 3 lines) and the price (wraps). Badges and selects can only
@@ -571,6 +588,7 @@ const idx = p => PRODUCTS.indexOf(p);
 const shows = (mode, p, has) => mode === 'off' ? false : mode === 'all' ? has : idx(p) === Number(mode);
 const showBadge  = p => shows(state.badge,  p, !!p.badge);
 const showSelect = p => shows(state.select, p, !!p.variants);
+const showDesc   = p => shows(state.desc,   p, !!p.desc);
 const variantsOf = p => p.variants || SINGLE_VARIANTS;
 
 function geo(){
@@ -596,6 +614,7 @@ function offerCard(p){
       <div class="offer__price t-body">
         ${p.regular ? `<span class="t-strike">${p.regular}</span>` : ''}<span>${p.price}</span>
       </div>
+      ${showDesc(p) ? `<div class="offer__desc t-body">${p.desc}</div>` : ''}
       ${showSelect(p) ? `<div class="offer__variant">
         <label class="select t-body">
           <span class="select__label">${variantsOf(p)[0]}</span>${ICON.chevronDown}
@@ -821,6 +840,12 @@ function initCarousel(offers){
    ============================================================ */
 const rig     = document.getElementById('rig');
 const frame   = document.getElementById('frame');
+/* the cart's height follows its content, so redraw the corners whenever it
+   changes size (content, width, web-font load) */
+new ResizeObserver(() => {
+  const cart = frame.querySelector('.cart');
+  if (cart) setSquircle(state.width, cart.offsetHeight);
+}).observe(frame);
 const wbadge  = document.getElementById('wbadge');
 const grips   = [...document.querySelectorAll('.grip')];
 
@@ -831,7 +856,7 @@ function applyGeometry(){
   root.setProperty('--cr-cart-w',  state.width + 'px');
   root.setProperty('--cr-slide-w', g.w + 'px');
   root.setProperty('--cr-gap',     g.gap + 'px');
-  setSquircle(state.width);
+  setSquircle(state.width, frame.querySelector('.cart')?.offsetHeight);
 
   const label = state.width + ' px';
   /* Text column of the side-by-side card: card minus frame, thumbnail, its
@@ -858,7 +883,8 @@ function applyGeometry(){
 
 /* Smart layout limit — the carousel stacks only when its widest badge or
    widest variant select would not fit next to the button:
-   limit = max(96, widest badge, min(longest variant + select chrome, 144)),
+   limit = max(96 — or 144 with any description shown, widest badge,
+               min(longest variant + select chrome, 144)),
    rounded up to 4px. Natural widths are measured off-screen with the same
    classes (so Uppercase and the theme font count). */
 const SELECT_CHROME = 15 + 8 + 20 + 11 + 2;   /* left pad + gap + chevron + right pad + border */
@@ -867,13 +893,18 @@ const SELECT_CHROME = 15 + 8 + 20 + 11 + 2;   /* left pad + gap + chevron + righ
    very long variant name can't push the whole carousel into stacking.
    Badges are not capped — a cut-off badge loses its message. */
 const SELECT_CAP = 144;
+/* A description wraps instead of truncating, so in a narrow column it turns
+   into a tall strip of 2–3 words a line. Any card showing one lifts the
+   minimum to the select's value — for readability and card height, not to
+   prevent truncation. Not measured: it is running text. */
+const DESC_MIN = SELECT_CAP;
 function contentLimit(){
   const probe = document.createElement('span');
   probe.style.cssText = 'position:absolute; visibility:hidden; left:-9999px; top:0; max-width:none; white-space:nowrap';
   const body = frame.querySelector('.offer__body') || frame;
   body.appendChild(probe);
   const natural = (cls, text) => { probe.className = cls; probe.textContent = text; return probe.getBoundingClientRect().width; };
-  let need = STACK_MIN;
+  let need = PRODUCTS.some(showDesc) ? Math.max(STACK_MIN, DESC_MIN) : STACK_MIN;
   PRODUCTS.forEach(p => {
     if (showBadge(p))  need = Math.max(need, natural('offer__badge t-h-sm', p.badge));
     if (showSelect(p)) variantsOf(p).forEach(v => { need = Math.max(need, Math.min(natural('t-body', v) + SELECT_CHROME, SELECT_CAP)); });
@@ -920,13 +951,16 @@ function paintSegs(){
     b.setAttribute('aria-pressed', String(b.dataset.val === state.badge)));
   document.getElementById('c-select').querySelectorAll('button').forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.val === state.select)));
+  document.getElementById('c-desc').querySelectorAll('button').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.val === state.desc)));
+
 }
 
 document.getElementById('c-style').querySelectorAll('button').forEach(b =>
   b.addEventListener('click', () => { state.style = b.dataset.val; paintSegs(); render(); }));
 document.getElementById('c-btn').querySelectorAll('button').forEach(b =>
   b.addEventListener('click', () => { state.btn = b.dataset.val; paintSegs(); render(); }));
-[['c-badge', 'badge'], ['c-select', 'select']].forEach(([id, key]) =>
+[['c-badge', 'badge'], ['c-desc', 'desc'], ['c-select', 'select']].forEach(([id, key]) =>
   document.getElementById(id).querySelectorAll('button').forEach(b =>
     b.addEventListener('click', () => { state[key] = b.dataset.val; paintSegs(); syncDependents(); render(); })));
 
