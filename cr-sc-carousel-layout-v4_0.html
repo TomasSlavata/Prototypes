@@ -57,30 +57,33 @@
 *{box-sizing:border-box}
 html,body{margin:0; padding:0}
 body{
-  background:#ececed; min-height:100vh;
+  background:#ececed; min-height:100vh; display:flex; align-items:flex-start;
   font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
 }
 
 .bar{
-  position:sticky; top:0; z-index:20; padding:14px 20px;
+  /* v3_16: settings sidebar on the left — full height, scrolls on its own */
+  position:sticky; top:0; z-index:20; flex:0 0 380px; height:100vh; overflow-y:auto;
+  padding:24px 20px;
   background:rgba(255,255,255,0.82);
   -webkit-backdrop-filter:saturate(180%) blur(20px);
   backdrop-filter:saturate(180%) blur(20px);
-  border-bottom:1px solid rgba(40,42,44,0.08);
+  border-right:1px solid rgba(40,42,44,0.08);
 }
-.bar__inner{
-  display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
-  gap:12px 40px; margin:0 auto;
-}
-/* groups (carousel · card content · layout) — set apart by the wider gap */
-.grp{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:12px 24px}
-.ctrl{display:flex; align-items:center; gap:10px}
-.ctrl.is-off{opacity:.4}
-.ctrl.is-off .switch input,
-.ctrl.is-off .seg button{cursor:default}
-.seg.is-off{opacity:.4}
-.seg.is-off button{cursor:default}
+.bar__inner{display:flex; flex-direction:column}
+/* groups (carousel · card content · layout) — set apart by a divider */
+.grp{display:flex; flex-direction:column; gap:18px}
+.grp + .grp{margin-top:20px; padding-top:20px; border-top:1px solid rgba(40,42,44,0.08)}
+/* label above its control, the control spans the sidebar; a switch sits on
+   the label's row, on the right; a slider shares its row with the readout */
+.ctrl{display:flex; flex-direction:column; align-items:stretch; gap:6px}
+.ctrl:has(.switch){flex-direction:row; align-items:center; justify-content:space-between}
+.ctrl:has(.range){display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px 12px}
+.ctrl:has(.range) .ctrl__label{grid-column:1 / -1}
+/* v3_16: a setting that has nothing to do right now is hidden (it was
+   disabled — faded — in v3_15) */
+.ctrl.is-off{display:none}
 .ctrl__label{
   font-size:13px; line-height:16px; color:#3c3c43; opacity:.75;
   white-space:nowrap; letter-spacing:-0.08px;
@@ -89,12 +92,11 @@ body{
 /* iOS segmented control — fixed segment width so switching Layout never
    reflows the bar, and 31px tall to match the switches */
 .seg{
-  display:inline-flex; padding:2px; gap:2px; height:31px;
+  display:flex; padding:2px; gap:2px; height:31px;
   background:rgba(118,118,128,0.12); border-radius:9px;
 }
-.seg--num button{width:38px !important}
 /* merchant settings — iOS-style slider with a px readout, and a text field */
-.range{appearance:none; -webkit-appearance:none; background:transparent; width:120px; height:31px; margin:0; cursor:ew-resize}
+.range{appearance:none; -webkit-appearance:none; background:transparent; width:100%; height:31px; margin:0; cursor:ew-resize}
 .range::-webkit-slider-runnable-track{height:4px; border-radius:2px; background:rgba(120,120,128,0.2)}
 .range::-moz-range-track{height:4px; border-radius:2px; background:rgba(120,120,128,0.2)}
 .range::-webkit-slider-thumb{
@@ -102,9 +104,9 @@ body{
   border-radius:50%; background:#fff; border:0; box-shadow:0 3px 8px rgba(0,0,0,.15), 0 3px 1px rgba(0,0,0,.06);
 }
 .range::-moz-range-thumb{width:22px; height:22px; border:0; border-radius:50%; background:#fff; box-shadow:0 3px 8px rgba(0,0,0,.15), 0 3px 1px rgba(0,0,0,.06)}
-.readout{font-size:13px; line-height:16px; color:#3c3c43; font-variant-numeric:tabular-nums; min-width:40px}
+.readout{font-size:13px; line-height:16px; color:#3c3c43; font-variant-numeric:tabular-nums; min-width:40px; text-align:right}
 .field{
-  font:inherit; font-size:13px; height:31px; width:130px; padding:0 10px;
+  font:inherit; font-size:13px; height:31px; width:100%; padding:0 10px;
   border:0; border-radius:9px; background:rgba(118,118,128,0.12); color:#000;
 }
 .field:focus{outline:2px solid rgba(0,122,255,.5); outline-offset:0}
@@ -112,7 +114,7 @@ body{
   appearance:none; border:0; background:transparent; cursor:pointer;
   font:inherit; font-size:13px; font-weight:500; letter-spacing:-0.08px;
   color:#000; padding:0; border-radius:7px;
-  width:80px; height:27px; display:grid; place-items:center;
+  flex:1 1 0; min-width:0; height:27px; display:grid; place-items:center;
   transition:background .2s ease, box-shadow .2s ease;
 }
 .seg button[aria-pressed="true"]{
@@ -136,7 +138,7 @@ body{
 .switch input:checked + i::after{transform:translateX(20px)}
 .switch input:disabled{cursor:default}
 
-.stage{display:flex; align-items:flex-start; justify-content:center; padding:40px 40px 60px}
+.stage{flex:1 1 auto; min-width:0; display:flex; align-items:flex-start; justify-content:center; padding:40px 40px 60px}
 /* the shadow has to be a filter, not box-shadow: clip-path would cut a
    box-shadow off, while drop-shadow follows the clipped squircle outline */
 #frame{filter:drop-shadow(0 12px 40px rgba(40,42,44,0.14))}
@@ -1133,7 +1135,7 @@ labelField.addEventListener('input', () => {
 });
 
 /* Badge caps only styles the badge — with the badge off it has nothing to
-   do, so it goes disabled (keeping its value for when the badge comes back) */
+   do, so it is hidden (keeping its value for when the badge comes back) */
 function syncDependents(){
   const off = (id, isOff) => {
     const el = document.getElementById(id);
