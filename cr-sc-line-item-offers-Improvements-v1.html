@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Candy Rack — Line item offers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CANDY RACK SLIDE CART TOKENS
+   Base: carousel-prototype-v3_15 (same tokens, 60% radius preset).
+   Line item offers: Figma 0edkK6N1wHbYJVQqCklGWl (UXD-187)
+   frames "1.1 Buton Layout" and "2.1 Checkbox Layout".
+   ============================================================ */
+:root{
+  --cr-bg-surface:      #ffffff;              /* color/bg/surface-default */
+  --cr-bg-offer:        #f8f8f8;              /* Line Item Offer Card fill */
+  --cr-border:          rgba(40,42,44,0.13);  /* color/border/default */
+  --cr-border-input:    rgba(40,42,44,0.4);   /* color/input/border-default */
+  --cr-text:            #282a2c;              /* color/text/default */
+  --cr-text-secondary:  rgba(40,42,44,0.7);   /* color/text/secondary */
+  --cr-icon-default:    rgba(40,42,44,0.7);   /* color/icon/default */
+  --cr-icon-disabled:   rgba(40,42,44,0.2);   /* color/icon/disabled */
+  --cr-text-disabled:   rgba(40,42,44,0.4);   /* color/text/disabled */
+  --cr-border-input-hover: #282a2c;           /* color/input/border-hover */
+  --cr-btn-bg:          #282a2c;              /* color/primary-button/bg-default */
+  --cr-btn-bg-hover:    #4a4e52;              /* color/primary-button/bg-hover */
+  --cr-btn-bg-disabled: rgba(74,78,82,0.3);   /* color/primary-button/bg-disabled */
+  --cr-btn-label:       #ffffff;              /* color/primary-button/label-default */
+  --cr-offer-added:     rgba(40,42,44,0.2);   /* Line Item Offer Card — added stroke */
+  --cr-offer-added-w:   1.5px;                /* its width */
+  --cr-tree-line:       rgba(40,42,44,0.2);   /* Tree · Line */
+  --cr-tree-branch:     #e6e6e6;              /* Tree · Branch (Arrow / Corner use #c8c8c8, baked into their SVG) */
+
+  --cr-r-thumbnail:     8px;                  /* corner-radius/60%/thumbnail */
+  --cr-r-button:        12px;                 /* corner-radius/60%/button */
+  --cr-r-input:         12px;                 /* corner-radius/60%/text-input */
+  --cr-r-iconbutton:    12px;                 /* corner-radius/60%/smal-icon-button */
+  --cr-r-card:          16px;                 /* corner-radius/60%/card */
+  --cr-r-badge:         8px;                  /* corner-radius/60%/badge */
+  --cr-badge-bg:        #d2280a;              /* color/badge/bg */
+  --cr-badge-label:     #ffffff;              /* color/badge/label */
+  /* not in the 60% preset — the Figma checkbox is square (0% preset) */
+  --cr-r-checkbox:      4px;
+
+  --cr-cart-h:  740px;
+  --cr-pad:     20px;
+  --cr-cart-w:  393px;                        /* set by JS — resizable 360–640 */
+}
+
+/* ============================================================
+   PAGE + CONTROLS (prototype chrome)
+   ============================================================ */
+*{box-sizing:border-box}
+html,body{margin:0; padding:0}
+body{
+  background:#ececed; min-height:100vh; display:flex; align-items:flex-start;
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+
+.bar{
+  /* settings sidebar on the left — full height, scrolls on its own */
+  position:sticky; top:0; z-index:20; flex:0 0 380px; height:100vh; overflow-y:auto;
+  padding:24px 20px;
+  background:rgba(255,255,255,0.82);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);
+  border-right:1px solid rgba(40,42,44,0.08);
+}
+.bar__inner{display:flex; flex-direction:column; gap:20px}
+.grp{display:flex; flex-direction:column; gap:18px}
+/* label above its control, the control spans the sidebar; a switch sits on
+   the label's row, on the right */
+.ctrl{display:flex; flex-direction:column; align-items:stretch; gap:6px}
+.ctrl:has(.switch){flex-direction:row; align-items:center; justify-content:space-between}
+.fields{display:flex; gap:6px}
+.fields .field{flex:1 1 0; min-width:0; width:auto}
+/* a setting that doesn't apply to the current layout is hidden (trial —
+   the previous disabled state was .ctrl.is-off{opacity:.4} with the
+   pointer-events rule below) */
+.ctrl.is-off{display:none}
+.ctrl.is-off .seg button,
+.ctrl.is-off .switch input,
+.ctrl.is-off .field{cursor:default; pointer-events:none}
+
+/* text field, sized like the segmented control */
+.field{
+  appearance:none; border:0; outline:none; width:96px; height:31px; padding:0 10px;
+  background:rgba(118,118,128,0.12); border-radius:9px;
+  font:inherit; font-size:13px; font-weight:500; letter-spacing:-0.08px; color:#000;
+  transition:box-shadow .2s ease;
+}
+.field:focus{box-shadow:0 0 0 2px #1c1c1e}
+
+/* iOS toggle (same as the carousel prototype) */
+.switch{position:relative; width:51px; height:31px; flex:0 0 auto}
+.switch input{position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer}
+.switch i{
+  position:absolute; inset:0; border-radius:15.5px; pointer-events:none;
+  background:rgba(120,120,128,0.16); transition:background .25s ease;
+}
+.switch i::after{
+  content:''; position:absolute; top:2px; left:2px; width:27px; height:27px;
+  background:#fff; border-radius:50%; transition:transform .25s ease;
+  box-shadow:0 3px 8px rgba(0,0,0,.15), 0 3px 1px rgba(0,0,0,.06);
+}
+.switch input:checked + i{background:#1c1c1e}
+.switch input:checked + i::after{transform:translateX(20px)}
+.ctrl__label{
+  font-size:13px; line-height:16px; color:#3c3c43; opacity:.75;
+  white-space:nowrap; letter-spacing:-0.08px;
+}
+
+/* iOS segmented control */
+.seg{
+  display:flex; padding:2px; gap:2px; height:31px;
+  background:rgba(118,118,128,0.12); border-radius:9px;
+}
+.seg button{
+  appearance:none; border:0; background:transparent; cursor:pointer;
+  font:inherit; font-size:13px; font-weight:500; letter-spacing:-0.08px;
+  color:#000; padding:0; border-radius:7px;
+  flex:1 1 0; min-width:0; height:27px; display:grid; place-items:center;
+  transition:background .2s ease, box-shadow .2s ease;
+}
+.seg button[aria-pressed="true"]{
+  background:#fff; font-weight:600;
+  box-shadow:0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04);
+}
+
+.stage{flex:1 1 auto; min-width:0; display:flex; align-items:flex-start; justify-content:center; padding:40px 40px 60px}
+/* the shadow has to be a filter, not box-shadow: clip-path would cut a
+   box-shadow off, while drop-shadow follows the clipped squircle outline */
+#frame{filter:drop-shadow(0 12px 40px rgba(40,42,44,0.14))}
+
+/* ---- resize rig (prototype chrome, not part of the design) ------------- */
+.rig{position:relative; display:flex; justify-content:center}
+.grip{
+  position:absolute; top:0; bottom:0; width:24px; display:grid; place-items:center;
+  cursor:ew-resize; touch-action:none; -webkit-user-select:none; user-select:none;
+}
+.grip--l{right:100%}
+.grip--r{left:100%}
+.grip::before{
+  content:''; width:4px; height:44px; border-radius:2px;
+  background:rgba(40,42,44,0.22); transition:background .15s ease;
+}
+.grip:hover::before{background:rgba(40,42,44,0.34)}
+.rig.is-resizing .grip::before{background:rgba(40,42,44,0.38)}
+.grip.is-limit::before{background:rgba(40,42,44,0.1)}
+
+.wbadge{
+  position:absolute; left:50%; top:100%; margin-top:14px; transform:translateX(-50%);
+  padding:3px 9px; border-radius:7px; background:#1c1c1e; color:#fff;
+  font-size:12px; line-height:16px; letter-spacing:-0.08px;
+  font-variant-numeric:tabular-nums; white-space:nowrap;
+  opacity:0; transition:opacity .15s ease; pointer-events:none;
+}
+.rig.is-resizing .wbadge{opacity:1}
+/* PDP toast — same pill as the width badge, in the same spot, so it tells
+   what the click would do in the real store */
+.toast.is-on{opacity:1}
+.rig.is-resizing .toast{opacity:0}
+
+/* ============================================================
+   SLIDE CART — 393 × 740 (minimum height, grows with content)
+   ============================================================ */
+.cart{
+  width:var(--cr-cart-w); min-height:var(--cr-cart-h);
+  background:var(--cr-bg-surface); overflow:hidden;
+  display:flex; flex-direction:column; color:var(--cr-text);
+  /* 32px corners with 60% corner smoothing — see squirclePath() */
+  clip-path:var(--cr-squircle);
+}
+/* Figma text styles */
+.t-h-lg{font-size:20px; line-height:26px; font-weight:600}
+.t-h-md{font-size:16px; line-height:22px; font-weight:600}
+.t-h-sm{font-size:14px; line-height:20px; font-weight:600}
+.t-body{font-size:14px; line-height:20px; font-weight:400}
+.t-btn-lg{font-size:16px; line-height:22px; font-weight:600}
+
+/* Top Bar — 66px */
+.topbar{
+  display:flex; align-items:center; gap:16px; padding:var(--cr-pad);
+  border-bottom:1px solid var(--cr-border); flex:0 0 auto;
+}
+.topbar h2{margin:0; flex:1 0 0}
+.iconbtn{
+  appearance:none; border:0; background:none; padding:0; cursor:pointer;
+  width:20px; height:20px; display:grid; place-items:center; color:var(--cr-icon-default);
+}
+.iconbtn svg,.stepper svg,.offer__add svg,.check svg{display:block}
+
+.body{flex:1 1 auto; min-height:0}
+
+/* Products — line items stacked 20px apart; each product owns its offers
+   (Figma "Product & Offers": product card, 16px, offers 8px apart) */
+.items{padding:var(--cr-pad); display:flex; flex-direction:column; gap:20px}
+.line{display:flex; flex-direction:column; gap:16px}
+/* More items in cart (Figma 1.9.2): a 1px divider 20px below one product
+   block and 20px above the next */
+.line + .line{border-top:1px solid var(--cr-border); padding-top:20px}
+.item{display:flex; align-items:flex-start}
+.item__thumb{
+  width:96px; height:96px; flex:0 0 auto; overflow:hidden;
+  border-radius:var(--cr-r-thumbnail); display:flex; align-items:center; justify-content:center;
+}
+.item__thumb img{width:100%; height:100%; object-fit:contain; display:block}
+.item__body{flex:1 0 0; min-width:0; padding-left:16px; display:flex; flex-direction:column}
+.item__row{display:flex; gap:20px; align-items:flex-start}
+.item__names{flex:1 0 0; min-width:0}
+.item__name{
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  overflow:hidden; text-overflow:ellipsis; overflow-wrap:anywhere;
+}
+.item__variant{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cr-text-secondary)}
+.item__qtyprice{display:flex; align-items:flex-end; justify-content:space-between; padding-top:16px}
+/* Figma: 116×40, stroke 1 INSIDE — 38 + 2×1 = 40 */
+.stepper{
+  display:flex; align-items:center; background:var(--cr-bg-surface);
+  border:1px solid var(--cr-border-input); border-radius:var(--cr-r-input);
+}
+.stepper > *{width:38px; height:38px; display:grid; place-items:center}
+.stepper button{appearance:none; border:0; background:none; padding:0; cursor:pointer; color:var(--cr-icon-default)}
+.stepper button[disabled]{color:var(--cr-icon-disabled); cursor:default}
+.item__price{
+  display:flex; flex-direction:column; align-items:flex-end; justify-content:center;
+  min-height:40px; text-align:right; white-space:nowrap;
+}
+.pdp{cursor:pointer; color:inherit; text-decoration:none; -webkit-user-drag:none}
+.pdp--text{pointer-events:none}
+.pdp--text > span{pointer-events:auto; cursor:pointer}
+.pdp--text > span:hover{text-decoration:underline}
+
+/* ============================================================
+   LINE ITEM OFFER CARD — 353 × 72
+   Fill #f8f8f8, padding 14/16, content gap 16, thumbnail 44.
+   ============================================================ */
+.offers{display:flex; flex-direction:column; gap:8px}
+.offer{
+  background:var(--cr-bg-offer); border-radius:var(--cr-r-card);
+  padding:14px 16px; display:flex; gap:16px;
+  /* added = 1.5px stroke INSIDE, so the card stays 72px tall */
+  box-shadow:inset 0 0 0 1.5px transparent;
+}
+.offer.is-added{box-shadow:inset 0 0 0 var(--cr-offer-added-w) var(--cr-offer-added)}
+
+/* ============================================================
+   TREE LAYOUT — Figma "34.2 … Drafts II", frames 1.2–5.1 (Button) and
+   6.2–10.1 (Checkbox). Every shape hangs off its own card, so it follows
+   the card wherever it lands (Rich content, two products).
+     --tree-x   centre of the card's first element (thumbnail 38 / checkbox 26)
+     --anchor   where a branch meets the card: the thumbnail centre (Button,
+                top-aligned) or the card centre (Checkbox, centred)
+   ============================================================ */
+.offer{position:relative}
+.offer--button{--tree-x:38px; --anchor:36px}
+.offer--checkbox{--tree-x:26px; --anchor:50%}
+
+/* 1 · Line — 1px line through the gaps, product → cards (16px, then 8px) */
+.tree-line .offer::before{
+  content:''; position:absolute; left:var(--tree-x); bottom:100%;
+  width:1px; height:8px; background:var(--cr-tree-line);
+}
+.tree-line .offer:first-child::before{height:16px}
+
+/* 2 · Branch — cards indented 26px; a 1.5px trunk at x 4 that fades in
+   from the top, curving into a fading branch at each card */
+.tree-branch, .tree-corner{padding-left:26px}
+.tree-branch .offer::before{
+  content:''; position:absolute; left:-22px; top:-8px; bottom:0; width:1.5px;
+  background:var(--cr-tree-branch);
+}
+.tree-branch .offer:first-child::before{
+  top:0; background:linear-gradient(to bottom, rgba(230,230,230,0), var(--cr-tree-branch) 32px);
+}
+.tree-branch .offer:last-child::before{bottom:calc(100% - var(--anchor) + 4px)}
+.tree-branch .offer::after{
+  content:''; position:absolute; left:-22px; top:calc(var(--anchor) - 4px);
+  width:20px; height:4.75px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='4.75' viewBox='0 0 20 4.75' fill='none'%3E%3Cpath d='M4.75 4L20 4' stroke-width='1.5' stroke='url(%23g)'/%3E%3Cpath d='M4.75 4C2.54086 4 0.75 2.20914 0.75 0' stroke-width='1.5' stroke='%23E6E6E6'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='4.75' y1='4.5' x2='20' y2='4.5' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23E6E6E6'/%3E%3Cstop offset='1' stop-color='%23E6E6E6' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E") no-repeat;
+}
+
+/* 3 · Arrow — a corner-down-right glyph per card, its arrow on the anchor.
+   Trial: 6px between the 20px glyph and the card (Figma has 8), so the
+   cards are indented 26px instead of 28 */
+.tree-arrow{padding-left:26px}
+.tree-arrow .offer::before{
+  content:''; position:absolute; left:-26px; top:calc(var(--anchor) - 12.5px);
+  width:20px; height:20px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M12.5 8.33333L16.6667 12.5L12.5 16.6667' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' stroke='%23C8C8C8'/%3E%3Cpath d='M3.33333 -0.666667V9.16667C3.33333 10.0507 3.68452 10.8986 4.30964 11.5237C4.93477 12.1488 5.78261 12.5 6.66667 12.5H16.6667' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' stroke='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='10' y1='-1' x2='10' y2='12.5' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23C8C8C8' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23C8C8C8'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E") no-repeat;
+}
+
+/* 4 · Corner — cards indented 26px; a fading └ per card ending on the anchor */
+.tree-corner .offer::before{
+  content:''; position:absolute; left:-24px; top:calc(var(--anchor) - 28px);
+  width:16px; height:28.75px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='28.75' viewBox='0 0 16 28.75' fill='none'%3E%3Cpath d='M4.75 28L16 28' stroke-width='1.5' stroke='url(%23a)'/%3E%3Cpath d='M4.75 28C2.54086 28 0.75 26.2091 0.75 24' stroke-width='1.5' stroke='%23C8C8C8'/%3E%3Crect width='1.5' height='24' fill='url(%23b)'/%3E%3Cdefs%3E%3ClinearGradient id='a' x1='4.75' y1='28.5' x2='16' y2='28.5' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23C8C8C8'/%3E%3Cstop offset='1' stop-color='%23C8C8C8' stop-opacity='0'/%3E%3C/linearGradient%3E%3ClinearGradient id='b' x1='0.75' y1='0' x2='0.75' y2='24' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0.5' stop-color='%23C8C8C8' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23C8C8C8'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E") no-repeat;
+}
+
+/* 5 · Notch — a 24×12 tail in the card colour on top of the first card,
+   pointing up at the product. It reaches 1.5px into the card to hide the
+   added stroke where the tail opens, and the added stroke runs on round
+   its two sides (::after, a 1.5px chevron) */
+.tree-notch .offer:first-child::before,
+.tree-notch .offer:first-child::after{
+  content:''; position:absolute; left:calc(var(--tree-x) - 12px);
+}
+.tree-notch .offer:first-child::before{
+  bottom:calc(100% - 1.5px); width:24px; height:13.5px; background:var(--cr-bg-offer);
+  clip-path:polygon(12px 0, 22.39px 12px, 20.41px 12px, 21.71px 13.5px, 2.29px 13.5px, 3.59px 12px, 1.61px 12px);
+}
+.tree-notch .offer:first-child::after{
+  bottom:100%; width:24px; height:12px; background:var(--cr-offer-added);
+  clip-path:polygon(12px 0, 22.39px 12px, 20.41px 12px, 12px 2.29px, 3.59px 12px, 1.61px 12px);
+  opacity:0;
+}
+.tree-notch .offer:first-child.is-added::after{opacity:1}
+.tree-notch .offer:first-child.anim-in::after{animation:notch-in .24s ease-out}
+.tree-notch .offer:first-child.anim-out::after{animation:notch-out .2s ease-in}
+@keyframes notch-in{from{opacity:0} to{opacity:1}}
+@keyframes notch-out{from{opacity:1} to{opacity:0}}
+/* The cart re-renders on every change, so a transition would never run —
+   the stroke is animated with keyframes, only on the render where the
+   offer's state actually flips (anim-in / anim-out, see settleAnim) */
+.offer.anim-in{animation:stroke-in .24s ease-out}
+.offer.anim-out{animation:stroke-out .2s ease-in}
+@keyframes stroke-in{
+  from{box-shadow:inset 0 0 0 0 rgba(40,42,44,0)}
+  to{box-shadow:inset 0 0 0 var(--cr-offer-added-w) var(--cr-offer-added)}
+}
+@keyframes stroke-out{
+  from{box-shadow:inset 0 0 0 var(--cr-offer-added-w) var(--cr-offer-added)}
+  to{box-shadow:inset 0 0 0 0 rgba(40,42,44,0)}
+}
+.offer__thumb{
+  width:44px; height:44px; flex:0 0 auto; overflow:hidden; display:block;
+  border-radius:var(--cr-r-thumbnail); background:var(--cr-bg-surface);
+}
+.offer__thumb img{width:100%; height:100%; object-fit:cover; display:block}
+.offer__info{flex:1 0 0; min-width:0; display:flex; flex-direction:column; justify-content:center}
+.offer__name{
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  overflow:hidden; text-overflow:ellipsis;
+  /* a word wider than the column breaks between letters instead of being
+     cut off; the rest still wraps between words. No hyphens — brand and
+     model names don't follow the dictionary. */
+  overflow-wrap:anywhere;
+}
+/* Price — struck-through original and sale price side by side; when they
+   don't fit the column the sale price wraps onto its own line (as in v3_15).
+   Each price stays whole (nowrap), and the Smart layout limit counts only
+   the wider of the two, so wrapping is what keeps them from overflowing. */
+.offer__price{display:flex; flex-wrap:wrap; align-items:center; gap:0 6px; white-space:nowrap}
+.t-strike{text-decoration:line-through; color:var(--cr-text-secondary)}
+
+/* Content: Rich — Figma 1.6.3 (Button) / 2.6.3 (Checkbox) */
+/* Badge — hug, padding 2/9, 6px below; never wider than the text column */
+.offer__badge{
+  align-self:flex-start; max-width:100%; margin-bottom:6px; padding:2px 9px;
+  border-radius:var(--cr-r-badge); background:var(--cr-badge-bg); color:var(--cr-badge-label);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* Description — text/secondary, wraps; 4px under the price (Button),
+   2px under the name (Checkbox, where the price sits on the right) */
+.offer__desc{padding-top:4px; color:var(--cr-text-secondary); overflow-wrap:anywhere}
+.offer--checkbox .offer__desc{padding-top:2px}
+/* Variant select — 16px above, 40px tall, fills the card colour. The native
+   <select> sits invisibly on top so the label can truncate. */
+.offer__variant{padding-top:16px; min-width:0}
+.select{
+  position:relative; display:flex; align-items:center; gap:8px; width:100%; height:40px;
+  padding:9px 11px 9px 15px; background:var(--cr-bg-offer);
+  border:1px solid var(--cr-border-input); border-radius:var(--cr-r-input); color:var(--cr-text);
+}
+.select__label{flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.select svg{flex:0 0 auto; display:block; color:var(--cr-icon-default)}
+.select select{position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font:inherit}
+
+/* Layout: Button — thumbnail · name over price · 36px "+" button.
+   Text column min 44 so it centres on the thumbnail. */
+.offer--button{align-items:flex-start}
+.offer--button .offer__info{min-height:44px}
+.offer--button .offer__price{padding-top:2px}
+.offer__btnwrap{display:flex; align-items:center; justify-content:flex-end; min-height:44px; flex:0 0 auto}
+.offer__add{
+  appearance:none; border:0; cursor:pointer; width:36px; height:36px; padding:8px;
+  display:grid; place-items:center;
+  background:var(--cr-btn-bg); color:var(--cr-btn-label); border-radius:var(--cr-r-iconbutton);
+  transition:background .12s ease;
+}
+/* Hover & Active = bg-hover in every interactive state (+ and ✓/−) */
+.offer:not(.is-loading) .offer__add:hover,
+.offer:not(.is-loading) .offer__add:active{background:var(--cr-btn-bg-hover)}
+.offer.is-loading .offer__add{background:var(--cr-btn-bg-disabled); cursor:default}
+/* icon per state: + default · spinner loading · ✓ added, − on hover (remove) */
+.offer__add .ic{display:none}
+.offer:not(.is-added):not(.is-loading) .ic-plus,
+.offer.is-loading .ic-spinner,
+.offer.is-added:not(.is-loading) .ic-check{display:block}
+.offer.is-added:not(.is-loading) .offer__add:hover .ic-check{display:none}
+.offer.is-added:not(.is-loading) .offer__add:hover .ic-minus{display:block}
+/* Button: Text — Primary Medium Button (Figma 11416:32544): 40px tall,
+   20px side padding, Button-Md Semi Bold 14/20. Add · spinner · Added
+   (labels editable in the settings). Both share one grid cell, so the
+   button is as wide as the longer and never jumps; 77 min (the Loading width). */
+.offer__add--text{
+  width:auto; min-width:77px; height:40px; padding:10px 20px; border-radius:var(--cr-r-button);
+  font:inherit; font-size:14px; font-weight:600; line-height:20px;
+}
+.offer__add--text > *{grid-area:1 / 1; visibility:hidden}
+.offer__add--text .ic-spinner{display:block}
+.offer:not(.is-added):not(.is-loading) .tx-add,
+.offer.is-loading .offer__add--text .ic-spinner,
+.offer.is-added:not(.is-loading) .tx-added{visibility:visible}
+/* Width: Fit — the button hugs its current label: the other one leaves the
+   cell. While loading, the label it is replacing keeps the width under the
+   spinner, so the button resizes once, when the new label lands. */
+.offer__add--fit{overflow:hidden}
+.offer__add--fit > *{white-space:nowrap}
+.offer:not(.is-added) .offer__add--fit .tx-added,
+.offer.is-added .offer__add--fit .tx-add{display:none}
+
+/* ============================================================
+   SMART LAYOUT (from carousel prototype v3_15) — when the text column would
+   drop under the content limit (contentLimit, decided for the whole cart in
+   applyGeometry):
+     Button:   the button leaves its column and spans the card under
+               thumbnail and text; the variant select moves out of the text
+               column too and sits above the button, full card width
+     Checkbox: only the price moves — from the right under the name, as in
+               the Button layout
+   The pieces are moved in the DOM (placeSmart), so the select keeps its value.
+   ============================================================ */
+.is-stacked .offer--button{
+  display:grid; grid-template-columns:auto minmax(0,1fr); gap:0 16px; align-items:start;
+}
+.is-stacked .offer--button .offer__thumb,
+.is-stacked .offer--button .offer__info{grid-row:1}
+.is-stacked .offer--button > .offer__variant{grid-row:2; grid-column:1 / -1; padding-top:16px}
+.is-stacked .offer--button .offer__btnwrap{grid-row:3; grid-column:1 / -1; min-height:0; padding-top:16px}
+.is-stacked .offer--button > .offer__variant + .offer__btnwrap{padding-top:12px}
+.is-stacked .offer--button .offer__add{width:100%}
+.is-stacked .offer--checkbox .offer__price{flex-direction:row; align-items:center; gap:0 6px; text-align:left; padding-top:2px}
+
+/* Layout: Checkbox — checkbox · thumbnail · name · price on the right.
+   Only the checkbox toggles (32×32 hit area — Figma "Clickable Area"). */
+.offer--checkbox{align-items:center}
+.offer--checkbox .offer__price{flex-direction:column; align-items:flex-end; gap:0; text-align:right}
+.check{
+  appearance:none; border:0; background:none; padding:0; cursor:pointer;
+  position:relative; width:20px; height:20px; flex:0 0 auto; display:grid; place-items:center;
+}
+.check::before{content:''; position:absolute; inset:-6px}
+.check:focus-visible{outline:2px solid rgba(0,122,255,.5); outline-offset:2px; border-radius:var(--cr-r-checkbox)}
+.check .ic{display:none}
+.cb-box{
+  position:relative; width:18px; height:18px; overflow:hidden;
+  border:1px solid var(--cr-border-input); border-radius:var(--cr-r-checkbox);
+  background:var(--cr-bg-offer); color:var(--cr-btn-label);
+}
+.offer.is-loading .cb-box{display:none}
+.offer:not(.is-added):not(.is-loading) .check:hover .cb-box,
+.offer.is-card-hit:not(.is-added):not(.is-loading):hover .cb-box{border-color:var(--cr-border-input-hover)}
+/* Clickable card — the whole card is the hit area (links and the select
+   keep their own cursor) */
+.offer.is-card-hit{cursor:pointer; -webkit-user-select:none; user-select:none}
+.offer.is-card-hit.is-loading{cursor:default}
+.offer.is-added .cb-box{background:var(--cr-border-input-hover); border-color:var(--cr-border-input-hover)}
+/* the 20px check glyph is wider than the 16px inside the border — centre it
+   on the box absolutely (flow layout pushed it 1px right and down) */
+.cb-box svg{display:none; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
+.offer.is-added .cb-box svg{display:block}
+.check .ic-spinner{color:var(--cr-icon-default)}
+.offer.is-loading .check .ic-spinner{display:block}
+
+/* spinner — shared by both layouts */
+.ic-spinner svg{transform-origin:50% 50%}
+.offer.is-loading .ic-spinner svg{animation:spin .7s linear infinite; will-change:transform}
+@keyframes spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
+
+/* Footer — 124px */
+.footer{border-top:1px solid var(--cr-border); padding:var(--cr-pad); display:flex; flex-direction:column; gap:16px; flex:0 0 auto}
+.subtotal{display:flex; justify-content:space-between; white-space:nowrap}
+/* total greys out while any offer is loading */
+.subtotal__value{transition:color .15s ease}
+.subtotal__value.is-updating{color:var(--cr-text-disabled)}
+.btn{
+  appearance:none; border:0; cursor:pointer; font-family:inherit;
+  background:var(--cr-btn-bg); color:var(--cr-btn-label); border-radius:var(--cr-r-button);
+}
+.btn--lg{width:100%; padding:12px 20px; text-align:center}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar__inner">
+    <div class="grp">
+      <div class="ctrl">
+        <span class="ctrl__label">Layout</span>
+        <div class="seg" id="c-layout"><button data-val="button">Button</button><button data-val="checkbox">Checkbox</button></div>
+      </div>
+      <div class="ctrl" id="ctrl-btn">
+        <span class="ctrl__label">Button</span>
+        <div class="seg" id="c-btn"><button data-val="icon">Icon</button><button data-val="text">Text</button></div>
+      </div>
+      <div class="ctrl" id="ctrl-labels">
+        <span class="ctrl__label">Labels</span>
+        <div class="fields">
+          <input class="field" id="c-lbl-add" type="text" maxlength="16" placeholder="Add" aria-label="Add label">
+          <input class="field" id="c-lbl-added" type="text" maxlength="16" placeholder="Added" aria-label="Added label">
+        </div>
+      </div>
+      <div class="ctrl" id="ctrl-fit">
+        <span class="ctrl__label">Width</span>
+        <div class="seg" id="c-fit"><button data-val="fixed">Fixed</button><button data-val="fit">Fit</button></div>
+      </div>
+      <div class="ctrl" id="ctrl-hit">
+        <span class="ctrl__label">Clickable card</span>
+        <label class="switch"><input type="checkbox" id="c-hit"><i></i></label>
+      </div>
+      <div class="ctrl">
+        <span class="ctrl__label">Images</span>
+        <div class="seg" id="c-tone"><button data-val="Gray">Gray</button><button data-val="White">White</button></div>
+      </div>
+      <div class="ctrl">
+        <span class="ctrl__label">Offer</span>
+        <div class="seg" id="c-content"><button data-val="simple">Simple</button><button data-val="rich">Rich</button></div>
+      </div>
+      <div class="ctrl">
+        <span class="ctrl__label">Cart items</span>
+        <div class="seg" id="c-items"><button data-val="1">1</button><button data-val="2">2</button><button data-val="3">3</button></div>
+      </div>
+      <div class="ctrl">
+        <span class="ctrl__label">Tree</span>
+        <div class="seg seg--tree" id="c-tree"><button data-val="off">Off</button><button data-val="line">Line</button><button data-val="branch">Branch</button><button data-val="arrow">Arrow</button><button data-val="corner">Corner</button><button data-val="notch">Notch</button></div>
+      </div>
+      <div class="ctrl">
+        <span class="ctrl__label">Smart layout</span>
+        <label class="switch"><input type="checkbox" id="c-smart"><i></i></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="rig" id="rig">
+    <div class="grip grip--l" data-side="-1" role="separator" aria-hidden="true"></div>
+    <div id="frame"></div>
+    <div class="grip grip--r" data-side="1" role="separator" aria-hidden="true"></div>
+    <div class="wbadge" id="wbadge">393 px</div>
+    <div class="wbadge toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SQUIRCLE — Figma corner radius + corner smoothing
+   (unchanged from the carousel prototype)
+   ============================================================ */
+function squirclePath(w, h, radius, smoothing){
+  const rad = deg => deg * Math.PI / 180;
+  const budget = Math.min(w, h) / 2;
+  const r = Math.min(radius, budget);
+  const s = Math.min(smoothing, budget / r - 1);
+  const p = Math.min((1 + s) * r, budget);
+
+  const arcMeasure = 90 * (1 - s);
+  const arc   = Math.sin(rad(arcMeasure / 2)) * r * Math.SQRT2;
+  const alpha = (90 - arcMeasure) / 2;
+  const beta  = 45 * s;
+  const c = r * Math.tan(rad(alpha / 2)) * Math.cos(rad(beta));
+  const d = c * Math.tan(rad(beta));
+  const b = (p - arc - c - d) / 3;
+  const a = 2 * b;
+  const n = v => +v.toFixed(3);
+  const abc = a + b + c;
+
+  return `path("M ${n(w - p)} 0 \
+c ${n(a)} 0 ${n(a + b)} 0 ${n(abc)} ${n(d)} \
+a ${n(r)} ${n(r)} 0 0 1 ${n(arc)} ${n(arc)} \
+c ${n(d)} ${n(c)} ${n(d)} ${n(b + c)} ${n(d)} ${n(abc)} \
+L ${n(w)} ${n(h - p)} \
+c 0 ${n(a)} 0 ${n(a + b)} ${n(-d)} ${n(abc)} \
+a ${n(r)} ${n(r)} 0 0 1 ${n(-arc)} ${n(arc)} \
+c ${n(-c)} ${n(d)} ${n(-(b + c))} ${n(d)} ${n(-abc)} ${n(d)} \
+L ${n(p)} ${n(h)} \
+c ${n(-a)} 0 ${n(-(a + b))} 0 ${n(-abc)} ${n(-d)} \
+a ${n(r)} ${n(r)} 0 0 1 ${n(-arc)} ${n(-arc)} \
+c ${n(-d)} ${n(-c)} ${n(-d)} ${n(-(b + c))} ${n(-d)} ${n(-abc)} \
+L 0 ${n(p)} \
+c 0 ${n(-a)} 0 ${n(-(a + b))} ${n(d)} ${n(-abc)} \
+a ${n(r)} ${n(r)} 0 0 1 ${n(arc)} ${n(-arc)} \
+c ${n(c)} ${n(-d)} ${n(b + c)} ${n(-d)} ${n(abc)} ${n(-d)} Z")`;
+}
+const setSquircle = (w, h = 740) =>
+  document.documentElement.style.setProperty('--cr-squircle', squirclePath(w, h, 32, 0.6));
+
+/* ============================================================
+   ICONS — exported from the Figma slide cart components
+   ============================================================ */
+const SVG = (p, size = 20) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" aria-hidden="true">${p}</svg>`;
+
+const ICON = {
+  cancel: SVG(`<path d="M3.21967 3.21967C3.51256 2.92678 3.98744 2.92678 4.28033 3.21967L10.0008 8.94016L15.7213 3.21967C16.0142 2.92678 16.4891 2.92678 16.782 3.21967C17.0749 3.51256 17.0749 3.98744 16.782 4.28033L11.0615 10.0008L16.782 15.7213C17.0749 16.0142 17.0749 16.4891 16.782 16.782C16.4891 17.0749 16.0142 17.0749 15.7213 16.782L10.0008 11.0615L4.28033 16.782C3.98744 17.0749 3.51256 17.0749 3.21967 16.782C2.92678 16.4891 2.92678 16.0142 3.21967 15.7213L8.94016 10.0008L3.21967 4.28033C2.92678 3.98744 2.92678 3.51256 3.21967 3.21967Z" fill="currentColor"/>`),
+  del: SVG(`<path fill-rule="evenodd" clip-rule="evenodd" d="M7.24994 5.25C7.24994 3.73122 8.48116 2.5 9.99994 2.5C11.5187 2.5 12.7499 3.73122 12.7499 5.25H15.75C16.1642 5.25 16.5 5.58579 16.5 6C16.5 6.41421 16.1642 6.75 15.75 6.75H14.9999L14.9998 12.2001C14.9998 13.8802 14.9997 14.7203 14.6728 15.362C14.3851 15.9265 13.9262 16.3854 13.3617 16.673C12.72 17 11.8799 17 10.1997 17H9.79999C8.11978 17 7.27968 17 6.63793 16.673C6.07343 16.3854 5.61448 15.9264 5.32687 15.3619C4.99989 14.7202 4.9999 13.8801 4.99994 12.1999L5.00005 6.75H4.25C3.83579 6.75 3.5 6.41421 3.5 6C3.5 5.58579 3.83579 5.25 4.25 5.25H7.24994ZM8.74994 5.25C8.74994 4.55964 9.30958 4 9.99994 4C10.6903 4 11.2499 4.55964 11.2499 5.25H8.74994ZM6.50007 6.75H13.4999L13.4998 12.2001C13.4998 13.0649 13.4986 13.6233 13.4639 14.0483C13.4305 14.4558 13.374 14.6068 13.3362 14.681C13.1924 14.9632 12.963 15.1927 12.6807 15.3365C12.6065 15.3743 12.4555 15.4308 12.048 15.4641C11.623 15.4988 11.0646 15.5 10.1997 15.5H9.79999C8.93513 15.5 8.37671 15.4988 7.95169 15.4641C7.54418 15.4308 7.3931 15.3743 7.31893 15.3365C7.03668 15.1927 6.80721 14.9632 6.6634 14.681C6.62561 14.6068 6.56909 14.4557 6.53581 14.0482C6.50109 13.6232 6.49994 13.0648 6.49995 12.1999L6.50007 6.75Z" fill="currentColor"/>`),
+  plus: SVG(`<path d="M10 5C9.58579 5 9.25 5.33579 9.25 5.75V9.25H5.75C5.33579 9.25 5 9.58579 5 10C5 10.4142 5.33579 10.75 5.75 10.75H9.25V14.25C9.25 14.6642 9.58579 15 10 15C10.4142 15 10.75 14.6642 10.75 14.25V10.75H14.25C14.6642 10.75 15 10.4142 15 10C15 9.58579 14.6642 9.25 14.25 9.25H10.75V5.75C10.75 5.33579 10.4142 5 10 5Z" fill="currentColor"/>`),
+  minus: SVG(`<rect x="5" y="9.25" width="10" height="1.5" rx="0.75" fill="currentColor"/>`),
+  chevronDown: SVG(`<path d="M14.7789 9.38033C15.0718 9.08743 15.0718 8.61256 14.7789 8.31967C14.486 8.02677 14.0111 8.02678 13.7182 8.31967L9.99927 12.0386L6.28033 8.31967C5.98744 8.02678 5.51256 8.02678 5.21967 8.31967C4.92678 8.61256 4.92678 9.08744 5.21967 9.38033L9.44703 13.6077C9.454 13.6152 9.46116 13.6227 9.4685 13.63C9.61563 13.7772 9.80868 13.8504 10.0015 13.8497C10.1929 13.8492 10.3841 13.776 10.53 13.63C10.5374 13.6227 10.5445 13.6153 10.5515 13.6077L14.7789 9.38033Z" fill="currentColor"/>`),
+  /* added / loading states — from the line item offer prototypes 1.1 and 2.1 */
+  check: SVG(`<path d="M8.25165 13.6907C8.25153 13.6906 8.25177 13.6909 8.25165 13.6907C8.54455 13.9836 9.01951 13.9837 9.31241 13.6908C9.31581 13.6874 9.31917 13.684 9.32248 13.6806L15.3227 7.68033C15.6156 7.38744 15.6156 6.91256 15.3227 6.61967C15.0298 6.32678 14.555 6.32678 14.2621 6.61967L8.78198 12.0997L6.13043 9.44819C5.83753 9.1553 5.36266 9.1553 5.06977 9.44819C4.77687 9.74109 4.77687 10.216 5.06977 10.5089L8.25165 13.6907Z" fill="currentColor"/>`),
+  spinner: SVG(`<path d="M19 10C19 14.9706 14.9706 19 10 19C5.02944 19 1 14.9706 1 10C1 5.02944 5.02944 1 10 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`)
+};
+
+/* ============================================================
+   PRODUCTS
+   Photos from ./imgs/line-item-offers-improvements/. Deviation from Figma
+   (which mixes white offer thumbnails with grey line items): every product
+   image in the cart uses the same background, Gray or White, picked with
+   "Images" (state.tone).
+   ============================================================ */
+const IMG_DIR = 'imgs/line-item-offers-improvements/';
+const img = n => IMG_DIR + encodeURIComponent(`${n} (${state.tone}).png`);
+
+const MAIN   = { id:'shoe',  name:'Nike Zoom Fly 5 Premium',     variant:'44 / White', price:79.99,  file:'06' };
+const SECOND = { id:'shoe2', name:'Nike ZoomX VaporFly',         variant:'42 / Green', price:129.99, file:'07' };
+const THIRD  = { id:'shoe3', name:'Nike Waffle One',             variant:'43 / Black', price:99.99,  file:'09' };
+/* "rich" — what the offer shows with Content: Rich (Figma 1.6.3 / 2.6.3):
+   badge, discounted price (compare = the struck-through original),
+   description and a variant select */
+const OFFERS = [
+  { id:'insoles',  name:'Comfort Insoles', price:9.99,  file:'05',
+    rich:{ desc:'Extra cushion, all-day wear.', variants:['44','42','43','45','46'] } },
+  { id:'spray',    name:'Protector Spray', price:14.99, file:'03',
+    rich:{ desc:'Repels water and stains.', variants:['250 ml','500 ml'] } },
+  { id:'kit',      name:'Cleaning Kit',    price:29.99, file:'04',
+    rich:{ desc:'Keep them looking box-fresh.', badge:'20% Off', price:23.99 } }
+];
+const esc = t => t.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money = v => '$' + v.toFixed(2);
+const rich = o => state.content === 'rich' ? o.rich : {};
+/* price actually charged, and the original to strike through (rich only) */
+const priceOf   = o => rich(o).price ?? o.price;
+const compareOf = o => rich(o).price ? o.price : null;
+
+/* Cart model — add / remove works as in the line item offer prototypes
+   1.1 (Button) and 2.1 (Checkbox): the offer card stays where it is and
+   toggles default → loading (800ms) → added, and back the same way.
+     Button:   + → spinner → ✓ (hover shows −, click removes)
+     Checkbox: only the box toggles; spinner in its place while loading
+   An added offer counts as one item in the cart title and the total; the
+   total greys out while any offer is loading. Switching the layout starts
+   the cart over. */
+const LOADING_MS = 800;
+/* "Cart items" — 1: one product with all three offers; 2: the first product
+   keeps one offer, the second product gets the other two; 3: one offer
+   per product. Every offer stays on screen either way, so switching keeps
+   what was added. */
+const linesOf = () => state.items === 1 ? [[MAIN, OFFERS]]
+  : state.items === 2 ? [[MAIN, OFFERS.slice(0, 1)], [SECOND, OFFERS.slice(1)]]
+  : [[MAIN, OFFERS.slice(0, 1)], [SECOND, OFFERS.slice(1, 2)], [THIRD, OFFERS.slice(2)]];
+
+/* "Clickable card" (Checkbox layout only, on by default) — off: only the box toggles;
+   on: the whole card toggles, except the PDP links (name, thumbnail) and
+   the variant select, which keep their own job */
+/* "Tree" — how the offers hang off their product: off · line · branch ·
+   arrow · corner · notch (see TREE LAYOUT in the styles) */
+const state = { layout:'button', tone:'Gray', content:'simple', items:1, cardHit:true, smart:true, btn:'icon', fit:'fixed', lblAdd:'Add', lblAdded:'Added', tree:'off', width:393,
+  qty:{ shoe:1, shoe2:1, shoe3:1 },           // product id → quantity
+  added:{}, loading:{}, anim:{},   // id → true / 'in' | 'out'
+  variant:{} };                    // id → picked variant, kept across re-renders
+
+const products = () => linesOf().map(([p]) => p);
+const count = () => products().reduce((n, p) => n + state.qty[p.id], 0) + Object.keys(state.added).length;
+const total = () => products().reduce((sum, p) => sum + p.price * state.qty[p.id], 0)
+  + OFFERS.reduce((sum, o) => sum + (state.added[o.id] ? priceOf(o) : 0), 0);
+const anyLoading = () => Object.keys(state.loading).length > 0;
+
+/* ============================================================
+   MARKUP
+   ============================================================ */
+function itemCard(p, qty){
+  return `<div class="item" data-id="${p.id}">
+    <a class="item__thumb pdp" href="#" draggable="false" aria-label="${p.name}">
+      <img src="${img(p.file)}" alt="" draggable="false">
+    </a>
+    <div class="item__body">
+      <div class="item__row">
+        <div class="item__names">
+          <a class="item__name pdp pdp--text t-h-sm" href="#" draggable="false"><span>${p.name}</span></a>
+          ${p.variant ? `<div class="item__variant t-body">${p.variant}</div>` : ''}
+        </div>
+        <button class="iconbtn" type="button" aria-label="Remove item">${ICON.del}</button>
+      </div>
+      <div class="item__qtyprice">
+        <div class="stepper">
+          <button type="button" data-act="dec" ${qty <= 1 ? 'disabled' : ''} aria-label="Decrease quantity">${ICON.minus}</button>
+          <div class="t-body">${qty}</div>
+          <button type="button" data-act="inc" aria-label="Increase quantity">${ICON.plus}</button>
+        </div>
+        <div class="item__price t-body"><span>${money(p.price * qty)}</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+const thumb = o => `<a class="offer__thumb pdp" href="#" draggable="false" aria-label="${o.name}">
+      <img src="${img(o.file)}" alt="" draggable="false"></a>`;
+
+const offerState = o => (state.added[o.id] ? ' is-added' : '') + (state.loading[o.id] ? ' is-loading' : '')
+  + (state.anim[o.id] ? ' anim-' + state.anim[o.id] : '');
+
+/* rich content pieces — empty strings when Content is Simple */
+const badge = o => rich(o).badge ? `<span class="offer__badge t-h-sm">${rich(o).badge}</span>` : '';
+const desc  = o => rich(o).desc ? `<div class="offer__desc t-body">${rich(o).desc}</div>` : '';
+const price = o => `<div class="offer__price t-body">
+      ${compareOf(o) ? `<span class="t-strike">${money(compareOf(o))}</span>` : ''}<span>${money(priceOf(o))}</span>
+    </div>`;
+function select(o){
+  const vs = rich(o).variants;
+  if (!vs) return '';
+  const cur = state.variant[o.id] ?? vs[0];
+  return `<div class="offer__variant">
+      <label class="select t-body">
+        <span class="select__label">${cur}</span>${ICON.chevronDown}
+        <select data-id="${o.id}" aria-label="Variant">${vs.map(v => `<option${v === cur ? ' selected' : ''}>${v}</option>`).join('')}</select>
+      </label>
+    </div>`;
+}
+const nameLink = o => `<a class="offer__name pdp pdp--text t-h-sm" href="#" draggable="false"><span>${o.name}</span></a>`;
+
+/* Button: badge · name · price · description · select, all in the text column */
+function offerButton(o){
+  return `<div class="offer offer--button${offerState(o)}" data-id="${o.id}">
+    ${thumb(o)}
+    <div class="offer__info">
+      ${badge(o)}${nameLink(o)}${price(o)}${desc(o)}${select(o)}
+    </div>
+    <div class="offer__btnwrap">
+      <button class="offer__add${state.btn === 'text' ? ' offer__add--text' : ''}${state.btn === 'text' && state.fit === 'fit' ? ' offer__add--fit' : ''}" type="button" data-act="toggle"
+        aria-label="${state.added[o.id] ? 'Remove' : 'Add'} ${o.name}">
+        ${state.btn === 'text'
+          ? `<span class="tx-add">${esc(state.lblAdd || 'Add')}</span><span class="tx-added">${esc(state.lblAdded || 'Added')}</span><span class="ic-spinner">${ICON.spinner}</span>`
+          : `<span class="ic ic-plus">${ICON.plus}</span><span class="ic ic-spinner">${ICON.spinner}</span><span class="ic ic-check">${ICON.check}</span><span class="ic ic-minus">${ICON.minus}</span>`}
+      </button>
+    </div>
+  </div>`;
+}
+
+/* Checkbox: badge · name · description · select in the text column, price
+   on the right (struck-through original above the sale price) */
+function offerCheckbox(o){
+  return `<div class="offer offer--checkbox${offerState(o)}${state.cardHit ? ' is-card-hit' : ''}" data-id="${o.id}">
+    <button class="check" type="button" data-act="toggle" role="checkbox"
+      aria-checked="${!!state.added[o.id]}" aria-label="Add ${o.name}">
+      <span class="cb-box">${ICON.check}</span><span class="ic ic-spinner">${ICON.spinner}</span>
+    </button>
+    ${thumb(o)}
+    <div class="offer__info">
+      ${badge(o)}${nameLink(o)}${desc(o)}${select(o)}
+    </div>
+    ${price(o)}
+  </div>`;
+}
+
+function cartHtml(){
+  const card = state.layout === 'button' ? offerButton : offerCheckbox;
+  const lines = linesOf().map(([p, offers]) => `<div class="line">
+          ${itemCard(p, state.qty[p.id])}
+          <div class="offers${state.tree !== 'off' ? ' tree-' + state.tree : ''}">${offers.map(card).join('')}</div>
+        </div>`).join('');
+
+  return `<div class="cart">
+    <div class="topbar">
+      <h2 class="t-h-lg">Cart (${count()})</h2>
+      <button class="iconbtn" type="button" aria-label="Close cart">${ICON.cancel}</button>
+    </div>
+
+    <div class="body">
+      <div class="items">
+        ${lines}
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="subtotal t-h-md"><span>Estimated total</span><span class="subtotal__value${anyLoading() ? ' is-updating' : ''}">${money(total())}</span></div>
+      <button class="btn btn--lg t-btn-lg" type="button">Checkout</button>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   RENDER + CONTROLS
+   ============================================================ */
+const rig    = document.getElementById('rig');
+const frame  = document.getElementById('frame');
+const wbadge = document.getElementById('wbadge');
+const grips  = [...document.querySelectorAll('.grip')];
+const WMIN = 360, WMAX = 640;
+
+new ResizeObserver(() => {
+  const cart = frame.querySelector('.cart');
+  if (cart) setSquircle(state.width, cart.offsetHeight);
+}).observe(frame);
+
+function applyGeometry(){
+  document.documentElement.style.setProperty('--cr-cart-w', state.width + 'px');
+  /* Smart layout — measure the text column side by side, then decide */
+  frame.classList.remove('is-stacked');
+  placeSmart(false);
+  const cols = [...frame.querySelectorAll('.offer__info')].map(i => i.getBoundingClientRect().width);
+  const textCol = cols.length ? Math.floor(Math.min(...cols)) : 0;
+  const limit = contentLimit();
+  const stacked = state.smart && textCol < limit;
+  frame.classList.toggle('is-stacked', stacked);
+  placeSmart(stacked);
+  setSquircle(state.width, frame.querySelector('.cart')?.offsetHeight);
+  wbadge.textContent = `${state.width} px · product ${textCol} / ${limit}` + (stacked ? ' · Smart layout' : '');
+  grips[0].classList.toggle('is-limit', state.width <= WMIN);
+  grips[1].classList.toggle('is-limit', state.width >= WMAX);
+}
+
+/* Smart layout limit (as in v3_15) — the narrowest text column the card may
+   have side by side, built from what is actually rendered:
+     · price          — the wider of sale and struck-through price
+     · product name   — NAME_MIN_CHARS characters of its font, or its longest
+                        word if wider, or the width that fits the whole name
+                        in its 3-line clamp (nameFitWidth) if wider still
+     · badge          — measured
+     · variant select — longest variant + select chrome, capped at SELECT_CAP
+     · description    — DESC_CHARS of its font (running text needs a few words a line)
+   Rounded up to 4px. Off-screen probe inside the cart, so the fonts apply. */
+const SELECT_CHROME = 15 + 8 + 20 + 11 + 2;   /* left pad + gap + chevron + right pad + border */
+const SELECT_CAP = 144;
+const DESC_CHARS = 'Soft cotton socks with';
+const NAME_MIN_CHARS = 14;
+const NAME_SAMPLE = 'Happy Stripe Socks';
+const NAME_LINES = 3;
+function contentLimit(){
+  const host = frame.querySelector('.offer__info');
+  if (!host) return 0;
+  const probe = document.createElement('span');
+  probe.style.cssText = 'position:absolute; visibility:hidden; left:-9999px; top:0; max-width:none; white-space:nowrap; display:inline-block';
+  host.appendChild(probe);
+  const natural = (cls, text) => { probe.className = cls; probe.textContent = text; return probe.getBoundingClientRect().width; };
+  const offers = linesOf().flatMap(([, os]) => os);
+  let need = 0;
+  offers.forEach(o => {
+    const r = rich(o);
+    need = Math.max(need,
+      natural('offer__price t-body', money(priceOf(o))),
+      compareOf(o) ? natural('offer__price t-body', money(compareOf(o))) : 0,
+      natural('offer__name t-h-sm', NAME_SAMPLE.slice(0, NAME_MIN_CHARS).replace(/ /g, '\u00a0')),
+      ...o.name.split(/\s+/).map(w => natural('offer__name t-h-sm', w)));
+    if (r.badge) need = Math.max(need, natural('offer__badge t-h-sm', r.badge));
+    if (r.desc) need = Math.max(need, natural('offer__desc t-body', DESC_CHARS));
+    (r.variants || []).forEach(v => { need = Math.max(need, Math.min(natural('t-body', v) + SELECT_CHROME, SELECT_CAP)); });
+  });
+  probe.remove();
+  offers.forEach(o => { need = Math.max(need, nameFitWidth(o.name, host)); });
+  return Math.ceil(need / 4) * 4;
+}
+/* the narrowest column in which the whole name still fits its line clamp —
+   laid out off-screen and binary-searched, so real word wrapping decides */
+function nameFitWidth(name, host){
+  const box = document.createElement('div');
+  box.className = 'offer__name t-h-sm';
+  box.style.cssText = 'position:absolute; visibility:hidden; left:-9999px; top:0; display:block; -webkit-line-clamp:unset; overflow:visible; max-width:none';
+  box.textContent = name;
+  host.appendChild(box);
+  const lh = parseFloat(getComputedStyle(box).lineHeight);
+  const fits = w => { box.style.width = w + 'px'; return box.scrollHeight <= NAME_LINES * lh + 1; };
+  let lo = 1, hi = 1200;
+  if (!fits(hi)) { box.remove(); return hi; }
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (fits(mid)) hi = mid; else lo = mid; }
+  box.remove();
+  return hi;
+}
+/* Smart layout moves — Button: the select between product block and button;
+   Checkbox: the price under the name. Back again when side by side. */
+function placeSmart(stacked){
+  frame.querySelectorAll('.offer').forEach(o => {
+    const info = o.querySelector('.offer__info');
+    if (o.classList.contains('offer--button')){
+      const v = o.querySelector('.offer__variant');
+      if (!v) return;
+      if (stacked) o.insertBefore(v, o.querySelector('.offer__btnwrap'));
+      else info.appendChild(v);
+    } else {
+      const pr = o.querySelector('.offer__price');
+      if (stacked) info.querySelector('.offer__name').after(pr);
+      else o.appendChild(pr);
+    }
+  });
+}
+
+/* Width: Fit animates the button's width change. The re-render replaces
+   the button, so a CSS transition can't run: the old width is measured
+   before, and the new button animates from it (FLIP). */
+const BTN_RESIZE_MS = 200;
+function render(){
+  const before = {};
+  frame.querySelectorAll('.offer__add--fit').forEach(b => {
+    before[b.closest('.offer').dataset.id] = b.getBoundingClientRect().width;
+  });
+  frame.innerHTML = cartHtml();
+  applyGeometry();
+  frame.querySelectorAll('.offer__add--fit').forEach(b => {
+    const from = before[b.closest('.offer').dataset.id], to = b.getBoundingClientRect().width;
+    if (from && Math.abs(from - to) > 0.5)
+      b.animate([{ width: from + 'px', minWidth: 0 }, { width: to + 'px', minWidth: 0 }],
+        { duration: BTN_RESIZE_MS, easing: 'cubic-bezier(.2,0,0,1)' });
+  });
+}
+
+/* one delegated handler for every cart action */
+frame.addEventListener('click', e => {
+  /* PDP links (name, thumbnail) go nowhere in the prototype — a toast
+     says what would happen instead */
+  if (e.target.closest('.pdp')){
+    e.preventDefault();
+    const name = e.target.closest('.item, .offer').querySelector('.item__name, .offer__name').textContent.trim();
+    showToast(`Opens product page · ${name}`);
+    return;
+  }
+  const btn = e.target.closest('button[data-act]');
+  if (!btn){
+    /* Clickable card — anywhere else on the card toggles it */
+    const card = e.target.closest('.offer.is-card-hit');
+    if (card && !e.target.closest('.offer__variant')) toggleOffer(card.dataset.id);
+    return;
+  }
+  const id = btn.closest('[data-id]').dataset.id;
+  const act = btn.dataset.act;
+  if (act === 'toggle') return toggleOffer(id);
+  if (id in state.qty) state.qty[id] = Math.max(1, state.qty[id] + (act === 'inc' ? 1 : -1));
+  render();
+});
+
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast(text){
+  toast.textContent = text;
+  toast.classList.add('is-on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('is-on'), 2000);
+}
+
+/* default → loading → added, or added → loading → default. Clicks during
+   loading are ignored; the epoch drops a pending result if the layout was
+   switched (cart reset) in the meantime. */
+let epoch = 0;
+function toggleOffer(id){
+  if (state.loading[id]) return;
+  const adding = !state.added[id], at = epoch;
+  state.loading[id] = true;
+  render();
+  setTimeout(() => {
+    if (at !== epoch) return;
+    delete state.loading[id];
+    if (adding) state.added[id] = true; else delete state.added[id];
+    state.anim[id] = adding ? 'in' : 'out';
+    render();
+    settleAnim(id);
+  }, LOADING_MS);
+}
+/* drop the animation class once it has played, so a later re-render (another
+   offer, the stepper) doesn't replay it — the class is removed in place, not
+   by re-rendering */
+function settleAnim(id){
+  setTimeout(() => {
+    delete state.anim[id];
+    frame.querySelector(`.offer[data-id="${id}"]`)?.classList.remove('anim-in', 'anim-out');
+  }, 300);
+}
+
+const layoutSeg = document.getElementById('c-layout');
+const toneSeg    = document.getElementById('c-tone');
+const contentSeg = document.getElementById('c-content');
+const itemsSeg   = document.getElementById('c-items');
+const hitSwitch  = document.getElementById('c-hit');
+const treeSeg    = document.getElementById('c-tree');
+const btnSeg     = document.getElementById('c-btn');
+const fitSeg     = document.getElementById('c-fit');
+function paintSegs(){
+  [[layoutSeg, 'layout'], [toneSeg, 'tone'], [contentSeg, 'content'], [itemsSeg, 'items'], [treeSeg, 'tree'], [btnSeg, 'btn'], [fitSeg, 'fit']].forEach(([seg, key]) =>
+    seg.querySelectorAll('button').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.val === String(state[key])))));
+  /* Clickable card only means something in the Checkbox layout */
+  hitSwitch.checked = state.cardHit;
+  hitSwitch.disabled = state.layout !== 'checkbox';
+  document.getElementById('ctrl-hit').classList.toggle('is-off', hitSwitch.disabled);
+  /* Button (Icon / Text) only means something in the Button layout */
+  document.getElementById('ctrl-btn').classList.toggle('is-off', state.layout !== 'button');
+  document.getElementById('ctrl-labels').classList.toggle('is-off', state.layout !== 'button' || state.btn !== 'text');
+  document.getElementById('ctrl-fit').classList.toggle('is-off', state.layout !== 'button' || state.btn !== 'text');
+}
+/* Labels — the Text button's two labels; empty falls back to Add / Added */
+[['c-lbl-add', 'lblAdd'], ['c-lbl-added', 'lblAdded']].forEach(([id, key]) => {
+  const input = document.getElementById(id);
+  input.value = state[key];
+  input.addEventListener('input', () => { state[key] = input.value.trim(); render(); });
+});
+const smartSwitch = document.getElementById('c-smart');
+smartSwitch.checked = state.smart;
+smartSwitch.addEventListener('change', () => { state.smart = smartSwitch.checked; applyGeometry(); });
+document.fonts.ready.then(applyGeometry);
+hitSwitch.addEventListener('change', () => { state.cardHit = hitSwitch.checked; render(); });
+/* Images, Content and Cart items only change what the cart shows — it keeps
+   its state (an added discounted offer re-prices in the total) */
+[[toneSeg, 'tone'], [contentSeg, 'content'], [itemsSeg, 'items'], [treeSeg, 'tree'], [btnSeg, 'btn'], [fitSeg, 'fit']].forEach(([seg, key]) =>
+  seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    state[key] = key === 'items' ? Number(b.dataset.val) : b.dataset.val; paintSegs(); render();
+  })));
+frame.addEventListener('change', e => {
+  const sel = e.target.closest('select[data-id]');
+  if (!sel) return;
+  state.variant[sel.dataset.id] = sel.value;
+  sel.parentElement.querySelector('.select__label').textContent = sel.value;
+});
+layoutSeg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+  if (state.layout === b.dataset.val) return;
+  state.layout = b.dataset.val; state.added = {}; state.loading = {}; state.anim = {}; state.qty = { shoe:1, shoe2:1, shoe3:1 }; epoch++;
+  paintSegs(); render();
+}));
+
+/* ---- edge grips -------------------------------------------------------
+   The cart is centred, so an edge tracks the pointer when
+   width = 2 × |pointerX − centre|. */
+function setWidth(w){
+  const next = Math.round(Math.max(WMIN, Math.min(WMAX, w)));
+  if (next === state.width) return;
+  state.width = next;
+  applyGeometry();
+}
+grips.forEach(grip => {
+  const side = Number(grip.dataset.side);
+  grip.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    rig.classList.add('is-resizing');
+    const centre = rig.getBoundingClientRect().left + rig.offsetWidth / 2;
+    const offset = (e.clientX - centre) * side - state.width / 2;
+    const move = ev => setWidth(2 * ((ev.clientX - centre) * side - offset));
+    const up = () => {
+      grip.removeEventListener('pointermove', move);
+      rig.classList.remove('is-resizing');
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up, { once:true });
+    grip.addEventListener('pointercancel', up, { once:true });
+  });
+});
+
+paintSegs(); render();
+</script>
+</body>
+</html>
